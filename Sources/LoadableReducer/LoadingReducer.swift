@@ -71,8 +71,13 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
     }
 
     private func handleLoad(state: State) -> EffectTask<Action> {
-        .run { send in
-            let readyState = await load(state)
+        guard case .initial(let initialState) = state else {
+            XCTFail("Loading from a non-initial state. That's not allowed.")
+            return .none
+        }
+
+        return .run { send in
+            let readyState = await load(initialState)
             await send(.initial(.onLoaded(.success(readyState))))
         } catch: { error, send in
             await send(.initial(.onLoaded(.failure(error))))

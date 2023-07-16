@@ -23,5 +23,5 @@
 import ComposableArchitecture
 import Foundation
 
-/// An alias for a loading closure that receives a ``LoadableState`` and a reducer conforming to ``LoadableReducerProtocol``, and returns a ready state.
-public typealias Load<Reducer: LoadableReducerProtocol> = (_ state: LoadableState<Reducer>) async -> Reducer.State
+/// An alias for a loading closure that receives a ``LoadingState`` and returns a ready state for the reducer.
+public typealias Load<Reducer: LoadableReducerProtocol> = (_ state: Reducer.LoadingState) async -> Reducer.State
