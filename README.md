@@ -8,7 +8,7 @@ An extension to TCA's `ReducerProtocol` to create a reducer that starts with ini
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/mtzaquia/LoadableReducer.git", branch: "main"),
+  .package(url: "https://github.com/mtzaquia/LoadableReducer.git", .upToNextMajor(from: "0.0.9")),
 ],
 ```
 
