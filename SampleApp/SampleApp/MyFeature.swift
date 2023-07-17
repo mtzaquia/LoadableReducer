@@ -40,20 +40,11 @@ struct MyFeature: LoadableReducerProtocol {
 
     var body: some ReducerProtocolOf<Self> { EmptyReducer() }
 
-    func shouldReload(state: State, action: Action) -> ReloadRequest<LoadingState> {
+    func updateRequest(for state: State, action: Action) -> UpdateRequest<LoadingState> {
         if action == .reload {
             return .reload(.init(url: state.lastUrl))
         }
 
         return .ignore
-    }
-}
-
-extension LoadableState where Reducer == MyFeature {
-    var url: URL {
-        switch self {
-        case .initial(let initial): return initial.url
-        case .ready(let ready): return ready.lastUrl
-        }
     }
 }

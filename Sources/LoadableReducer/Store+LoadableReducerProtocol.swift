@@ -40,7 +40,7 @@ public extension Store {
       withDependencies prepareDependencies: ((inout DependencyValues) -> Void)? = nil
     ) where State == LoadableState<R>, Action == _LoadableAction<R> {
         self.init(
-            initialState: .initial(initialState()),
+            initialState: .loading(initialState()),
             reducer: {
                 _LoadingReducer(
                     load: load,

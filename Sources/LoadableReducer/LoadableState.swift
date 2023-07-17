@@ -27,7 +27,7 @@ import SwiftUI
 /// asynchronously.
 public enum LoadableState<Reducer: LoadableReducerProtocol>: Equatable {
     /// The state is initial, and contains data to start a load.
-    case initial(Reducer.LoadingState)
+    case loading(Reducer.LoadingState)
     /// The state is ready, and contains all the data the feature needs.
-    case ready(Reducer.State)
+    case loaded(Reducer.State)
 }

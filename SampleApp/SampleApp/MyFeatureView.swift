@@ -27,12 +27,19 @@ import SwiftUI
 struct MyFeatureView: LoadableView {
     let store: MyFeature.LoadableStore
 
-    func readyView(store: StoreOf<MyFeature>) -> some View {
+    func loadedView(store: StoreOf<MyFeature>) -> some View {
         WithViewStore(store) { viewStore in
             (Text("Ready. ") + Text("Tap to reload.").bold())
                 .onTapGesture {
                     viewStore.send(.reload)
                 }
+        }
+    }
+
+    func loadingView(store: MyFeature.LoadingStore) -> some View {
+        WithViewStore(store) { viewStore in
+            Text("Hey chris, loading...")
+                .onAppear { viewStore.send(.load) }
         }
     }
 }

@@ -33,31 +33,39 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
     var body: some ReducerProtocolOf<Self> {
         Reduce { state, action in
             switch action {
-            case .initial(.load):
-                return handleLoad(state: state)
-            case .ready(let readyAction):
-                guard case .ready(let readyState) = state,
-                      case .reload(let initialState) = reducer.shouldReload(
-                        state: readyState,
-                        action: readyAction
-                      )
-                else {
+            case .loading(.load):
+                guard case .loading(let loadingState) = state else {
+                    XCTFail("Loading from a non-initial state. That's not allowed.")
                     return .none
                 }
 
-                state = .initial(initialState)
-                return handleLoad(state: state)
+                return handleLoad(loadingState)
 
-            case .initial(.onLoaded(.success(let readyState))):
-                state = .ready(readyState)
+            case .loading(.onLoaded(.success(let readyState))):
+                state = .loaded(readyState)
                 return .none
 
-            case .initial(.onLoaded(.failure(let error))):
+            case .loading(.onLoaded(.failure(let error))):
                 print(error)
                 return .none
+
+            case .loaded(let readyAction):
+                guard case .loaded(let readyState) = state else {
+                    return .none
+                }
+
+                switch reducer.updateRequest(for: readyState, action: readyAction) {
+                case .refresh(let loadingState):
+                    return handleLoad(loadingState)
+                case .reload(let loadingState):
+                    state = .loading(loadingState)
+                    return handleLoad(loadingState)
+                case .ignore:
+                    return .none
+                }
             }
         }
-        .ifCaseLet(/State.ready, action: /Action.ready) {
+        .ifCaseLet(/State.loaded, action: /Action.loaded) {
             reducer
         }
     }
@@ -70,17 +78,12 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
         self.reducer = reducer
     }
 
-    private func handleLoad(state: State) -> EffectTask<Action> {
-        guard case .initial(let initialState) = state else {
-            XCTFail("Loading from a non-initial state. That's not allowed.")
-            return .none
-        }
-
-        return .run { send in
-            let readyState = await load(initialState)
-            await send(.initial(.onLoaded(.success(readyState))))
+    private func handleLoad(_ loadingState: Reducer.LoadingState) -> EffectTask<Action> {
+        .run { send in
+            let loadedState = await load(loadingState)
+            await send(.loading(.onLoaded(.success(loadedState))))
         } catch: { error, send in
-            await send(.initial(.onLoaded(.failure(error))))
+            await send(.loading(.onLoaded(.failure(error))))
         }
     }
 }

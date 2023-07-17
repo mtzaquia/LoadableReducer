@@ -28,9 +28,9 @@ public protocol LoadableView: View {
     /// The reducer for the `ready` state of this view.
     associatedtype Reducer: LoadableReducerProtocol
     /// The initial view, or loading view, type.
-    associatedtype Initial: View
+    associatedtype Loading: View
     /// The ready view, or loaded view, type.
-    associatedtype Ready: View
+    associatedtype Loaded: View
 
     /// A store to the loadable state, or top-level state, of the ready reducer.
     var store: Reducer.LoadableStore { get }
@@ -38,31 +38,31 @@ public protocol LoadableView: View {
     /// A function providing the initial view. This protocol provides a default implementation
     /// for this view, but you may override it as needed.
     /// - Parameter store: The loading store.
-    func initialView(store: Reducer.LoadingStore) -> Initial
+    func loadingView(store: Reducer.LoadingStore) -> Loading
 
     /// A function providing the ready view. Akin to a regular `body` in a plain `SwiftUI.View`.
     /// - Parameter store: The reducer's store.
-    func readyView(store: StoreOf<Reducer>) -> Ready
+    func loadedView(store: StoreOf<Reducer>) -> Loaded
 }
 
 public extension LoadableView {
     var body: some View {
         SwitchStore(store) {
             CaseLet(
-                state: /_LoadingReducer<Reducer>.State.initial,
-                action: _LoadingReducer<Reducer>.Action.initial,
-                then: initialView
+                state: /_LoadingReducer<Reducer>.State.loading,
+                action: _LoadingReducer<Reducer>.Action.loading,
+                then: loadingView
             )
 
             CaseLet(
-                state: /_LoadingReducer<Reducer>.State.ready,
-                action: _LoadingReducer<Reducer>.Action.ready,
-                then: readyView
+                state: /_LoadingReducer<Reducer>.State.loaded,
+                action: _LoadingReducer<Reducer>.Action.loaded,
+                then: loadedView
             )
         }
     }
 
-    func initialView(store: Reducer.LoadingStore) -> some View {
+    func loadingView(store: Reducer.LoadingStore) -> some View {
         WithViewStore(store) { viewStore in
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: .gray))

@@ -23,13 +23,17 @@
 import ComposableArchitecture
 import Foundation
 
-/// A request object, used to make a decision on whether the feature
-/// should reload or not.
-public enum ReloadRequest<State: Equatable> {
+/// An update request object, used to make a decision on whether the feature
+/// should refresh/reload or not.
+public enum UpdateRequest<LoadingState: Equatable> {
     /// Ignore the reload, and do nothing.
     case ignore
-    /// Trigger a reload, providing a new initial state for the loading function.
-    case reload(State)
+    /// Trigger a reload with a new initial state.
+    /// - Important: When reloading, the feature will shift to a loading state.
+    case reload(LoadingState)
+    /// Trigger a refresh with a new initial state.
+    /// - Important: When refreshing, the feature will remain ready and update inline once data is available.
+    case refresh(LoadingState)
 }
 
 /// A protocol declaring a ``ReducerProtocol`` that needs to load additional
@@ -42,15 +46,14 @@ public protocol LoadableReducerProtocol: ReducerProtocol where State: Equatable 
     /// loading for this reducer.
     typealias LoadableStore = Store<LoadableState<Self>, _LoadableAction<Self>>
     /// An alias to the loading store - the initial state of a loadable reducer.
-    typealias LoadingStore = Store<LoadingState, _LoadableAction<Self>.InitialAction>
+    typealias LoadingStore = Store<LoadingState, _LoadableAction<Self>.LoadingAction>
 
-    /// A function determining whether a reload should take place based on ready actions.
+    /// A function determining whether a refresh/reload should take place based on ready actions.
     /// - Parameter state: The ready state, which you may use to re-build your `LoadingState`.
     /// - Parameter action: The ready action to evaluate.
-    /// - Returns: A reload request, either with a new loading state for reload, or with an ignore signal.
-    func shouldReload(state: State, action: Action) -> ReloadRequest<LoadingState>
+    func updateRequest(for state: State, action: Action) -> UpdateRequest<LoadingState>
 }
 
 public extension LoadableReducerProtocol {
-    func shouldReload(state: State, action: Action) -> ReloadRequest<LoadingState> { .ignore }
+    func updateRequest(for state: State, action: Action) -> UpdateRequest<LoadingState> { .ignore }
 }

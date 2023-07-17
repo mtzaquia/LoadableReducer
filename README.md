@@ -49,14 +49,14 @@ struct MyFeature: LoadableReducerProtocol {
 > 
 > By default, your reducer does the first load when the initial view appears, but you can customise that by providing your own initial view (see [The view](#the-view)).
 
-**[Optional]** You may reload the reducer based on a "ready" action.
+**[Optional]** You may refresh or reload the reducer based on a "ready" action.
 ```swift
 struct MyFeature: LoadableReducerProtocol {
   // ...
 
-  func shouldReload(state: State, action: Action) -> ReloadRequest<LoadingState> {
+  func updateRequest(for state: State, action: Action) -> UpdateRequest<LoadingState> {
     if action == .reload {
-      return .reload(.init(url: state.currentUrl)) // You will need to provide a new instance of a `LoadingState` here.
+      return .reload(.init(url: state.currentUrl)) // You must provide a new instance of a `LoadingState` here.
     }
 
     return .ignore // no actions trigger a reload when the reducer is ready by default.
@@ -72,7 +72,7 @@ Your view implementation must be part of a `LoadableView` type. Simply create yo
 struct MyFeatureView: LoadableView {
   let store: MyFeature.LoadableStore
 
-  func readyView(store: StoreOf<MyFeature>) -> some View { // this is akin to your `body` in a plain `SwiftUI.View`.
+  func loadedView(store: StoreOf<MyFeature>) -> some View { // this is akin to your `body` in a plain `SwiftUI.View`.
     WithViewStore(store) { viewStore in
       Text("Ready, tap to reload.")
         .onTapGesture { viewStore.send(.reload) } // the `reload` action we declared on `MyFeature.Action`.
@@ -81,16 +81,16 @@ struct MyFeatureView: LoadableView {
 }
 ```
 
-**[Optional]** You may override the default initial view. When doing so, make sure to trigger the built-in `load` action at some point, or the loading will never start.
+**[Optional]** You may override the default loading view. When doing so, make sure to trigger the built-in `load` action at some point, or the loading will never start.
 
 ```swift
 struct MyFeatureView: LoadableView {
   // ...
 
-  func initialView(store: MyFeature.LoadingStore) -> some View {
+  func loadingView(store: MyFeature.LoadingStore) -> some View {
     WithViewStore(store) { viewStore in
       Text("Loading...")
-        .onAppear { viewStore.send(.load) } // when overriding the default initial view, you must call `load` yourself.
+        .onAppear { viewStore.send(.load) } // when overriding the default loading view, you must call `load` yourself.
     }
   }
 }
@@ -117,6 +117,7 @@ MyFeatureView(
 ## Missing features
 
 - [ ] Proper error handling: built-in error view and `retry` action.
+- [ ] Task cancellation tweaks.
 
 ## License
 

@@ -24,10 +24,10 @@ import ComposableArchitecture
 import SwiftUI
 
 public enum _LoadableAction<Reducer: LoadableReducerProtocol> {
-    case initial(InitialAction)
-    case ready(Reducer.Action)
+    case loading(LoadingAction)
+    case loaded(Reducer.Action)
 
-    public enum InitialAction {
+    public enum LoadingAction {
         case load
         case onLoaded(TaskResult<Reducer.State>)
     }
