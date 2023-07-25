@@ -30,6 +30,10 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
     private let load: Load<Reducer>
     private let reducer: Reducer
 
+    enum CancelID {
+        case load
+    }
+
     var body: some ReducerProtocolOf<Self> {
         Reduce { state, action in
             switch action {
@@ -79,11 +83,15 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
     }
 
     private func handleLoad(_ loadingState: Reducer.LoadingState) -> EffectTask<Action> {
-        .run { send in
-            let loadedState = await load(loadingState)
-            await send(.loading(.onLoaded(.success(loadedState))))
-        } catch: { error, send in
-            await send(.loading(.onLoaded(.failure(error))))
-        }
+        .concatenate(
+            .cancel(id: CancelID.load),
+            .run { send in
+                let loadedState = await load(loadingState)
+                await send(.loading(.onLoaded(.success(loadedState))))
+            } catch: { error, send in
+                await send(.loading(.onLoaded(.failure(error))))
+            }
+            .cancellable(id: CancelID.load)
+        )
     }
 }

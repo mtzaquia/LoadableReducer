@@ -19,6 +19,7 @@ You can use the `LoadableReducer` in 3 simple steps: reducer, view, and store.
 ### The reducer
 
 Conform your new reducer with `LoadableReducerProtcol`, and **implement your TCA reducer as you normally would**:
+
 ```swift
 struct MyFeature: LoadableReducerProtocol { // instead of `ReducerProtocol`
   // ...
@@ -26,6 +27,7 @@ struct MyFeature: LoadableReducerProtocol { // instead of `ReducerProtocol`
 ```
 
 There is one addition needed to complete your conformance. Provide a `LoadingState` type that includes data you will have available when the feature starts, but before it fully loads:
+
 ```swift
 struct MyFeature: LoadableReducerProtocol {
   struct LoadingState: Equatable { // Your LoadingState must conform to `Equatable`.
@@ -39,17 +41,19 @@ struct MyFeature: LoadableReducerProtocol {
 
   enum Action {
     case reload // not required, but an example of an action that may reload the feature.
-    // ... 
+    // ...
   }
 
   var body: some ReducerProtocolOf<Self> { /* ... */ }
 }
 ```
+
 > **Note**
-> 
+>
 > By default, your reducer does the first load when the initial view appears, but you can customise that by providing your own initial view (see [The view](#the-view)).
 
 **[Optional]** You may refresh or reload the reducer based on a "ready" action.
+
 ```swift
 struct MyFeature: LoadableReducerProtocol {
   // ...
@@ -66,16 +70,18 @@ struct MyFeature: LoadableReducerProtocol {
 
 ### The view
 
-Your view implementation must be part of a `LoadableView` type. Simply create your wrapping view, and provide your `body` as you normally would in the `readyView(store:)` function.
+You can build a view for your loadable reducer with `WithLoadableStore(...)`.
 
 ```swift
-struct MyFeatureView: LoadableView {
-  let store: MyFeature.LoadableStore
+struct MyFeatureView: View {
+  let store: MyFeature.LoadableStore // Declare a store to your loadable reducer using the convenience alias.
 
-  func loadedView(store: StoreOf<MyFeature>) -> some View { // this is akin to your `body` in a plain `SwiftUI.View`.
-    WithViewStore(store) { viewStore in
-      Text("Ready, tap to reload.")
-        .onTapGesture { viewStore.send(.reload) } // the `reload` action we declared on `MyFeature.Action`.
+  var body: some View {
+    WithLoadableStore(store) { loadedStore in
+      WithViewStore(loadedStore) { viewStore in
+        (Text("Ready. ") + Text("Tap to reload.").bold())
+          .onTapGesture { viewStore.send(.reload) }
+      }
     }
   }
 }
@@ -84,13 +90,17 @@ struct MyFeatureView: LoadableView {
 **[Optional]** You may override the default loading view. When doing so, make sure to trigger the built-in `load` action at some point, or the loading will never start.
 
 ```swift
-struct MyFeatureView: LoadableView {
-  // ...
+struct MyFeatureView: View {
+  /* ... */
 
-  func loadingView(store: MyFeature.LoadingStore) -> some View {
-    WithViewStore(store) { viewStore in
-      Text("Loading...")
-        .onAppear { viewStore.send(.load) } // when overriding the default loading view, you must call `load` yourself.
+  var body: some View {
+    WithLoadableStore(store) { loadedStore in
+      /* ... */
+    } loading: { loadingStore in
+      WithViewStore(loadingStore) { viewStore in
+        Text("Hey chris, loading...")
+          .onAppear { viewStore.send(.load) } // when overriding the default loading view, you must call `load` yourself.
+      }
     }
   }
 }

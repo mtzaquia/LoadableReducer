@@ -23,50 +23,69 @@
 import ComposableArchitecture
 import SwiftUI
 
-/// A protocol describing a view that works alongside a ``LoadableReducerProtocol``.
-public protocol LoadableView: View {
-    /// The reducer for the `ready` state of this view.
-    associatedtype Reducer: LoadableReducerProtocol
-    /// The initial view, or loading view, type.
-    associatedtype Loading: View
-    /// The ready view, or loaded view, type.
-    associatedtype Loaded: View
-
-    /// A store to the loadable state, or top-level state, of the ready reducer.
-    var store: Reducer.LoadableStore { get }
-
-    /// A function providing the initial view. This protocol provides a default implementation
-    /// for this view, but you may override it as needed.
-    /// - Parameter store: The loading store.
-    func loadingView(store: Reducer.LoadingStore) -> Loading
+/// A helper view to deal with loadable stores from ``LoadableReducerProtocol`` types.
+public struct WithLoadableStore<Reducer: LoadableReducerProtocol, Loaded: View, Loading: View>: View {
+    /// A store to the loadable state from your loadable reducer.
+    let store: Reducer.LoadableStore
 
     /// A function providing the ready view. Akin to a regular `body` in a plain `SwiftUI.View`.
-    /// - Parameter store: The reducer's store.
-    func loadedView(store: StoreOf<Reducer>) -> Loaded
-}
+    let loaded: (StoreOf<Reducer>) -> Loaded
+    /// A function providing the initial view. A default implementation is used when `nil`.
+    let loading: ((Reducer.LoadingStore) -> Loading)?
 
-public extension LoadableView {
-    var body: some View {
+    public var body: some View {
         SwitchStore(store) {
             CaseLet(
                 state: /_LoadingReducer<Reducer>.State.loading,
-                action: _LoadingReducer<Reducer>.Action.loading,
-                then: loadingView
-            )
+                action: _LoadingReducer<Reducer>.Action.loading
+            ) { loadingStore in
+                Group {
+                    if let loading {
+                        loading(loadingStore)
+                    } else {
+                        WithViewStore(loadingStore) { viewStore in
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .onAppear { viewStore.send(.load) }
+                        }
+                    }
+                }
+            }
 
             CaseLet(
                 state: /_LoadingReducer<Reducer>.State.loaded,
                 action: _LoadingReducer<Reducer>.Action.loaded,
-                then: loadedView
+                then: loaded
             )
         }
     }
 
-    func loadingView(store: Reducer.LoadingStore) -> some View {
-        WithViewStore(store) { viewStore in
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .gray))
-                .onAppear { viewStore.send(.load) }
-        }
+    /// Creates a new loaded view from a given loadable store, using a default view for loading.
+    /// - Parameters:
+    ///   - store: A store to the loadable state from your loadable reducer.
+    ///   - loaded: The view builder for when the reducer is ready.
+    public init(
+        _ store: Reducer.LoadableStore,
+        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> Loaded
+    ) where Loading == EmptyView {
+        self.store = store
+        self.loaded = loaded
+        self.loading = nil
+    }
+
+    /// Creates a new loaded view and loading view from a given loadable store.
+    /// - Parameters:
+    ///   - store: A store to the loadable state from your loadable reducer.
+    ///   - loaded: The view builder for when the reducer is ready.
+    ///   - loading: The view builder for when the reducer is started.
+    public init(
+        _ store: Reducer.LoadableStore,
+        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> Loaded,
+        @ViewBuilder loading: @escaping (Reducer.LoadingStore) -> Loading
+    ) {
+        self.store = store
+        self.loaded = loaded
+        self.loading = loading
     }
 }

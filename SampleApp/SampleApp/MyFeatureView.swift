@@ -24,22 +24,22 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct MyFeatureView: LoadableView {
+struct MyFeatureView: View {
     let store: MyFeature.LoadableStore
 
-    func loadedView(store: StoreOf<MyFeature>) -> some View {
-        WithViewStore(store) { viewStore in
-            (Text("Ready. ") + Text("Tap to reload.").bold())
-                .onTapGesture {
-                    viewStore.send(.reload)
-                }
-        }
-    }
-
-    func loadingView(store: MyFeature.LoadingStore) -> some View {
-        WithViewStore(store) { viewStore in
-            Text("Hey chris, loading...")
-                .onAppear { viewStore.send(.load) }
+    var body: some View {
+        WithLoadableStore(store) { loadedStore in
+            WithViewStore(loadedStore) { viewStore in
+                (Text("Ready. ") + Text("Tap to reload.").bold())
+                    .onTapGesture {
+                        viewStore.send(.reload)
+                    }
+            }
+        } loading: { loadingStore in
+            WithViewStore(loadingStore) { viewStore in
+                Text("Hey chris, loading...")
+                    .onAppear { viewStore.send(.load) }
+            }
         }
     }
 }
