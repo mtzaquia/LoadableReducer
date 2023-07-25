@@ -127,7 +127,7 @@ MyFeatureView(
 ## Missing features
 
 - [ ] Proper error handling: built-in error view and `retry` action.
-- [ ] Task cancellation tweaks.
+- [X] Task cancellation tweaks.
 
 ## License
 
