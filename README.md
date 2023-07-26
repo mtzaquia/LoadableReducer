@@ -56,7 +56,7 @@ extension MyFeature {
 > **Note:**
 > By default, your reducer does the first load when the initial view appears, but you can customise that by providing your own initial view (see [The view](#the-view)).
 
-**[Optional]** You may refresh or reload the reducer based on a "ready" action. Refreshing will preserve your current loaded content, reloading will not.
+**[Optional]** You may refresh or reload the reducer based on a "ready" action. Refreshing will preserve your current loaded content, but reloading will not.
 
 ```swift
 struct MyFeature: LoadableReducerProtocol {
@@ -100,10 +100,10 @@ struct MyFeatureView: View {
 }
 ```
 
-**[Optional]** You may override the default loading view. When doing so, make sure to trigger the built-in `load` action at some point, or the loading will never start.
+**[Optional]** You may override the default loading view. When doing so, make sure to trigger the built-in `.load` action at some point, or the loading will never start.
 
 > **Note:**
-> The same applies for the error view and its `retry` action.
+> The same applies for the error view and its `.retry` action.
 
 ```swift
 struct MyFeatureView: View {
