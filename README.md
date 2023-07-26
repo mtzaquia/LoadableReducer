@@ -26,27 +26,30 @@ struct MyFeature: LoadableReducerProtocol { // instead of `ReducerProtocol`
 }
 ```
 
-There are two additions needed to complete your conformance. 
-- Provide a `LoadingState` type that includes data you will have available when the feature starts, but before it fully loads;
-- Conform your `State` type with `LoadedState`. This will require you to hold on to an instance of your `LoadingState`.
+There are three required steps to conform to `LoadableReducerProtocol`:
+1. Conform your `State` to `LoadedState`. This will require you to hold on to an instance of your `LoadingState`;
+2. Provide a `LoadingState` type that includes data you will have available when the feature starts, but before it fully loads;
+3. Declare the `load(_:)` function. It receives the `LoadingState` and returns the reducer's `State`.
 
 ```swift
 struct MyFeature: LoadableReducerProtocol {
-  struct LoadingState: Equatable { // Your LoadingState must conform to `Equatable`.
-    var url: URL
-  }
-
-  struct State: LoadedState {
+  struct State: LoadedState { // 1. conform your state to `LoadedState`
     var loadingState: LoadingState 
-    // ...
+    /* ... */
   }
 
-  enum Action {
-    case reload // not required, but an example of an action that may reload the feature.
-    // ...
-  }
-
+  enum Action { /* ... */ }
   var body: some ReducerProtocolOf<Self> { /* ... */ }
+}
+
+extension MyFeature {
+  struct LoadingState: Equatable { // 2. Declare a `LoadingState` type. 
+    /* ... */
+  }
+  
+  func load(_ loadingState: LoadingState) async throws -> State { // 3. Add the `load(_:)` function.
+    /* ... */
+  }
 }
 ```
 
@@ -57,14 +60,19 @@ struct MyFeature: LoadableReducerProtocol {
 
 ```swift
 struct MyFeature: LoadableReducerProtocol {
-  // ...
+  /* ... */
+   
+  enum Action {
+    case somethingChanged 
+    /* ... */ 
+  }
 
   func updateRequest(for action: Action) -> UpdateRequest? {
-    if action == .reload {
-      return .reload // the `loadingState` from your current `State` will be used, so you may update that accordingly in your reducer.
+    if action == .somethingChanged {
+      return .reload // the reducer will discard the current data and will fetch new data.
     }
 
-    return nil // no actions trigger a reload when the reducer is ready by default.
+    return nil // does nothing.
   }
 }
 ```
@@ -75,13 +83,17 @@ You can build a view for your loadable reducer with `WithLoadableStore(...)`. An
 
 ```swift
 struct MyFeatureView: View {
-  let store: MyFeature.LoadableStore // Declare a store to your loadable reducer using the convenience alias.
+  // 1. Declare a store to your loadable reducer using the convenience alias.
+  let store: LoadableStoreOf<MyFeature>
 
   var body: some View {
+    // 2. Build your views with the `WithLoadableStore(...)` helper.
     WithLoadableStore(store) { loadedStore in
       WithViewStore(loadedStore) { viewStore in
-        (Text("Ready. ") + Text("Tap to reload.").bold())
-          .onTapGesture { viewStore.send(.reload) }
+        VStack {
+          Text("Ready!")
+          Button("Reload") { viewStore.send(.reload) }
+        }
       }
     }
   }
@@ -102,8 +114,11 @@ struct MyFeatureView: View {
       /* ... */
     } loading: { loadingStore in
       WithViewStore(loadingStore) { viewStore in
-        Text("Hey there, loading...")
-          .onAppear { viewStore.send(.load) } // when overriding the default loading view, you must call `load` yourself.
+        Text("Loading...")
+          .onAppear {
+            // You must explicitly call `.load` when overriding the default loading view. 
+            viewStore.send(.load)
+          } 
       }
     }
   }
@@ -112,20 +127,45 @@ struct MyFeatureView: View {
 
 ### The store
 
-A new `convenience init` is added to the TCA's `Store` type. It includes a `load` parameter. This parameter is an asynchronous closure that will
-receive the `LoadingState`, may perform `async` operations, and must ultimately return the "ready" State for your reducer.
+When creating your store, make sure to wrap your `LoadableReducerProtocol` within a `LoadingReducer`.
 
 ```swift
 MyFeatureView(
   store: .init(
-    initialState: .init(url: URL(string: "https://gogle.com")!),
-    reducer: MyFeature.init,
-    load: { state in
-      try await Task.sleep(for: .seconds(2)) // example of asynchronous work. If this fails, the error state will become active.
-      return .init(loadingState: state) // pass along your initial state to the ready state for reloading and refreshing when needed.
-    }
+    initialState: .loading(.init(/* ... */)),
+    reducer: { LoadingReducer(reducer: MyFeature()) }
   )
 )
+```
+
+### Composing
+
+When composing features, refer to the `LoadableState` and `LoadableAction` of your `LoadableReducerProtocol`, and don't forget to wrap your composed reducer in a `LoadingReducer`, too.
+
+```swift
+struct MyFeature: LoadableReducerProtocol {
+  struct State: LoadedState {
+    // Refer to the `LoadableState` instead of `State`.
+    @PresentationState var other: OtherFeature.LoadableState? 
+    
+    /* ... */
+  }
+
+  enum Action {
+    // Refer to the `LoadableAction` instead of `Action`.
+    case other(PresentationAction<OtherFeature.LoadableAction>) 
+    
+    /* ... */
+  }
+
+  var body: some ReducerProtocolOf<Self> {
+    Reduce { /* ... */ }
+      .ifLet(\.$other, action: /Action.other) {
+        // Don't forget to wrap your reducer in a `LoadingReducer`!
+        LoadingReducer(reducer: OtherFeature()) 
+      }
+  }
+}
 ```
 
 ## Missing features
