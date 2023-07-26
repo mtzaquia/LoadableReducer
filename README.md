@@ -50,7 +50,7 @@ struct MyFeature: LoadableReducerProtocol {
 }
 ```
 
-> **Note**
+> **Note:**
 > By default, your reducer does the first load when the initial view appears, but you can customise that by providing your own initial view (see [The view](#the-view)).
 
 **[Optional]** You may refresh or reload the reducer based on a "ready" action. Refreshing will preserve your current loaded content, reloading will not.
@@ -61,8 +61,7 @@ struct MyFeature: LoadableReducerProtocol {
 
   func updateRequest(for action: Action) -> UpdateRequest? {
     if action == .reload {
-      return .reload // the `loadingState` from your current `State` will be used, so you
-      may update that accordingly in your reducer.
+      return .reload // the `loadingState` from your current `State` will be used, so you may update that accordingly in your reducer.
     }
 
     return nil // no actions trigger a reload when the reducer is ready by default.
@@ -91,7 +90,7 @@ struct MyFeatureView: View {
 
 **[Optional]** You may override the default loading view. When doing so, make sure to trigger the built-in `load` action at some point, or the loading will never start.
 
-> **Note**
+> **Note:**
 > The same applies for the error view and its `retry` action.
 
 ```swift
