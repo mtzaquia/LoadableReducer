@@ -23,5 +23,24 @@
 import ComposableArchitecture
 import Foundation
 
-/// An alias for a loading closure that receives a ``LoadingState`` and returns a ready state for the reducer.
-public typealias Load<Reducer: LoadableReducerProtocol> = (_ state: Reducer.LoadingState) async throws -> Reducer.State
+public extension Store {
+    /// Initializes a store from an initial state and a reducer that requires asynchronous
+    /// loading before being ready.
+    ///
+    /// - Parameters:
+    ///   - initialState: The state to start the application in.
+    ///   - reducer: The reducer that powers the business logic of the application, once the loading has completed.
+    ///   - prepareDependencies: A closure that can be used to override dependencies that will be accessed
+    ///     by the reducer.
+    convenience init<R: LoadableReducerProtocol>(
+      initialState: @autoclosure () -> R.LoadingState,
+      @ReducerBuilder<R.State, R.Action> reducer: () -> R,
+      withDependencies prepareDependencies: ((inout DependencyValues) -> Void)? = nil
+    ) where State == R.LoadableState, Action == R.LoadableAction {
+        self.init(
+            initialState: .loading(initialState()),
+            reducer: { _LoadingReducer(reducer: reducer()) },
+            withDependencies: prepareDependencies
+        )
+    }
+}

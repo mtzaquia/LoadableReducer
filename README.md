@@ -102,7 +102,7 @@ struct MyFeatureView: View {
       /* ... */
     } loading: { loadingStore in
       WithViewStore(loadingStore) { viewStore in
-        Text("Hey chris, loading...")
+        Text("Hey there, loading...")
           .onAppear { viewStore.send(.load) } // when overriding the default loading view, you must call `load` yourself.
       }
     }

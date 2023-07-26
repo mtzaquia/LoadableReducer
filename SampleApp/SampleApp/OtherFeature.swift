@@ -24,63 +24,28 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct MyFeature: LoadableReducerProtocol {
+struct OtherFeature: LoadableReducerProtocol {
     struct State: LoadedState {
         var loadingState: LoadingState
-        var isRefreshing: Bool = false
-
-        @PresentationState var other: OtherFeature.LoadableState?
+        var greeting: String
     }
 
-    enum Action {
-        case reload
-        case refresh
-        case presentOther
-
-        case other(PresentationAction<OtherFeature.LoadableAction>)
+    enum Action: Hashable {
+        case noop
     }
 
     var body: some ReducerProtocolOf<Self> {
-        Reduce { state, action in
-            switch action {
-            case .refresh:
-                state.isRefreshing = true
-                return .none
-
-            case .presentOther:
-                state.other = .loading(.init(name: "MZ"))
-                return .none
-
-            case .reload, .other:
-                return .none
-            }
-        }
-        .ifLet(\.$other, action: /Action.other) {
-            OtherFeature()
-        }
+        EmptyReducer()
     }
 }
 
-extension MyFeature {
+extension OtherFeature {
     struct LoadingState: Equatable {
-        let url: URL
+        let name: String
     }
 
     func load(_ loadingState: LoadingState) async throws -> State {
         try await Task.sleep(for: .seconds(2))
-
-//        if Bool.random() {
-//            throw URLError(.cancelled)
-//        }
-
-        return .init(loadingState: loadingState)
-    }
-
-    func updateRequest(for action: Action) -> UpdateRequest? {
-        switch action {
-        case .reload: return .reload
-        case .refresh: return .refresh
-        default: return nil
-        }
+        return .init(loadingState: loadingState, greeting: "Hello, \(loadingState.name)")
     }
 }

@@ -24,16 +24,14 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-@main
-struct SampleApp: App {
-    var body: some Scene {
-        WindowGroup {
-            MyFeatureView(
-                store: .init(
-                    initialState: .init(url: URL(string: "https://gogle.com")!),
-                    reducer: MyFeature.init
-                )
-            )
+struct OtherFeatureView: View {
+    let store: OtherFeature.LoadableStore
+
+    var body: some View {
+        WithLoadableStore(store) { loadedStore in
+            WithViewStore(loadedStore) { viewStore in
+                Text(viewStore.greeting)
+            }
         }
     }
 }

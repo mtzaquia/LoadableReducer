@@ -23,18 +23,16 @@
 import ComposableArchitecture
 import Foundation
 
-struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
-    typealias State = _LoadableState<Reducer>
-    typealias Action = _LoadableAction<Reducer>
+public struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
+    public typealias State = _LoadableState<Reducer>
+    public typealias Action = _LoadableAction<Reducer>
 
-    private let load: Load<Reducer>
     private let reducer: Reducer
-
-    enum CancelID {
+    private enum CancelID {
         case load
     }
 
-    var body: some ReducerProtocolOf<Self> {
+    public var body: some ReducerProtocolOf<Self> {
         Reduce { state, action in
             switch action {
             case .loading(.load):
@@ -101,14 +99,9 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
         .ifCaseLet(/State.loaded, action: /Action.loaded) {
             reducer
         }
-        ._printChanges()
     }
 
-    init(
-        load: @escaping Load<Reducer>,
-        reducer: Reducer
-    ) {
-        self.load = load
+    init(reducer: Reducer) {
         self.reducer = reducer
     }
 
@@ -116,7 +109,7 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
         .concatenate(
             .cancel(id: CancelID.load),
             .run { send in
-                let loadedState = try await load(loadingState)
+                let loadedState = try await reducer.load(loadingState)
                 await send(.loading(.onLoaded(.success(loadedState))))
             } catch: { error, send in
                 await send(.loading(.onLoaded(.failure(error))))

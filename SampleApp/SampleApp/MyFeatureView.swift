@@ -31,28 +31,48 @@ struct MyFeatureView: View {
         WithLoadableStore(store) { loadedStore in
             WithViewStore(loadedStore) { viewStore in
                 VStack {
-                    (Text("Ready. ") + Text("Tap to reload...").bold())
-                        .onTapGesture {
-                            viewStore.send(.reload)
-                        }
+                    VStack {
+                        Text("Ready.")
 
-                    HStack {
-                        (Text("... or ") + Text("Tap to refresh.").bold())
-                            .onTapGesture {
-                                viewStore.send(.refresh)
-                            }
-                        
-                        if viewStore.isRefreshing {
-                            ProgressView()
+                        Button {
+                            viewStore.send(.reload)
+                        } label: {
+                            Text("Reload").bold()
                         }
+                        .buttonStyle(.borderedProminent)
+
+                        Button {
+                            viewStore.send(.refresh)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Refresh").bold()
+                                if viewStore.isRefreshing {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .tint(.white)
+                                }
+                            }
+                            .frame(minHeight: 20)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .frame(minHeight: 20)
+
+                    Divider()
+
+                    Button {
+                        viewStore.send(.presentOther)
+                    } label: {
+                        Text("Present other feature")
+                    }
                 }
             }
-        } loading: { loadingStore in
-            WithViewStore(loadingStore) { viewStore in
-                Text("Hey chris, loading...")
-                    .onAppear { viewStore.send(.load) }
+            .sheet(
+                store: loadedStore.scope(
+                    state: \.$other,
+                    action: { .other($0) }
+                )
+            ) { store in
+                OtherFeatureView(store: store)
             }
         }
     }

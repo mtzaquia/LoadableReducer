@@ -35,12 +35,24 @@ public struct WithLoadableStore<
     /// An animation to be used for transition between views. Defaults to `nil`.
     let animation: Animation?
 
+    public typealias LoadedBuilder = (
+        StoreOf<Reducer>
+    ) -> LoadedView
+
+    public typealias LoadingBuilder = (
+        Store<Reducer.LoadingState, _LoadableAction<Reducer>.LoadingAction>
+    ) -> LoadingView
+
+    public typealias ErrorBuilder = (
+        Store<_ErrorState<Reducer.LoadingState>, _LoadableAction<Reducer>.ErrorAction>
+    ) -> ErrorView
+
     /// A function providing the ready view. Akin to a regular `body` in a plain `SwiftUI.View`.
-    let loadedView: (StoreOf<Reducer>) -> LoadedView
+    let loadedView: LoadedBuilder
     /// A function providing the initial view. A default implementation is used when `nil`.
-    let loadingView: ((Reducer.LoadingStore) -> LoadingView)?
+    let loadingView: LoadingBuilder?
     /// A function providing the error view. A default implementation is used when `nil`.
-    let errorView: ((Reducer.ErrorStore) -> ErrorView)?
+    let errorView: ErrorBuilder?
 
     public var body: some View {
         WithViewStore(store, observe: \.asCaseString) { viewStore in
@@ -104,7 +116,7 @@ public struct WithLoadableStore<
     public init(
         _ store: Reducer.LoadableStore,
         animation: Animation? = nil,
-        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView
+        @ViewBuilder loaded: @escaping LoadedBuilder
     ) where LoadingView == EmptyView, ErrorView == EmptyView {
         self.store = store
         self.animation = animation
@@ -121,8 +133,8 @@ public struct WithLoadableStore<
     public init(
         _ store: Reducer.LoadableStore,
         animation: Animation? = nil,
-        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView,
-        @ViewBuilder loading: @escaping (Reducer.LoadingStore) -> LoadingView
+        @ViewBuilder loaded: @escaping LoadedBuilder,
+        @ViewBuilder loading: @escaping LoadingBuilder
     ) where ErrorView == EmptyView {
         self.store = store
         self.animation = animation
@@ -139,8 +151,8 @@ public struct WithLoadableStore<
     public init(
         _ store: Reducer.LoadableStore,
         animation: Animation? = nil,
-        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView,
-        @ViewBuilder error: @escaping (Reducer.ErrorStore) -> ErrorView
+        @ViewBuilder loaded: @escaping LoadedBuilder,
+        @ViewBuilder error: @escaping ErrorBuilder
     ) where LoadingView == EmptyView {
         self.store = store
         self.animation = animation
@@ -158,9 +170,9 @@ public struct WithLoadableStore<
     public init(
         _ store: Reducer.LoadableStore,
         animation: Animation? = nil,
-        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView,
-        @ViewBuilder loading: @escaping (Reducer.LoadingStore) -> LoadingView,
-        @ViewBuilder error: @escaping (Reducer.ErrorStore) -> ErrorView
+        @ViewBuilder loaded: @escaping LoadedBuilder,
+        @ViewBuilder loading: @escaping LoadingBuilder,
+        @ViewBuilder error: @escaping ErrorBuilder
     ) {
         self.store = store
         self.animation = animation

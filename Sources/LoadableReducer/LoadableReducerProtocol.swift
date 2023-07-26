@@ -32,14 +32,22 @@ public protocol LoadableReducerProtocol: ReducerProtocol where State: LoadedStat
     /// An alias to the loadable store, or top-level store, that will manage the
     /// loading for this reducer.
     typealias LoadableStore = Store<_LoadableState<Self>, _LoadableAction<Self>>
-    /// An alias to the loading store - the initial state of a loadable reducer.
-    typealias LoadingStore = Store<LoadingState, _LoadableAction<Self>.LoadingAction>
-    /// An alias to the error store - for when the reducer fails to load.
-    typealias ErrorStore = Store<_ErrorState<LoadingState>, _LoadableAction<Self>.ErrorAction>
 
-    /// A function determining whether a refresh/reload should take place based on ready actions.
+    /// The loadable state, which should be used when composing reducers together.
+    typealias LoadableState = _LoadableState<Self>
+    /// The loadable action, which should be used when composing reducers together.
+    typealias LoadableAction = _LoadableAction<Self>
+
+    /// The asynchronous function responsible for loading the data and providing a ready state back into the application.
+    ///
+    /// - Parameter loadingState: The loading state with metadata for the loading operation.
+    /// - Returns: The loaded, or ready, state.
+    func load(_ loadingState: LoadingState) async throws -> State
+
+    /// A function determining whether a refresh/reload should take place based on ready actions or not (when `nil` is returned).
     /// - Parameter state: The ready state, which you may use to re-build your `LoadingState`.
     /// - Parameter action: The ready action to evaluate.
+    /// - Returns: An update request, or `nil` if no update should happen from the action.
     func updateRequest(for action: Action) -> UpdateRequest?
 }
 
