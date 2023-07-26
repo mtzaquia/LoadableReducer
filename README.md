@@ -26,16 +26,18 @@ struct MyFeature: LoadableReducerProtocol { // instead of `ReducerProtocol`
 }
 ```
 
-There is one addition needed to complete your conformance. Provide a `LoadingState` type that includes data you will have available when the feature starts, but before it fully loads:
+There are two additions needed to complete your conformance. 
+- Provide a `LoadingState` type that includes data you will have available when the feature starts, but before it fully loads;
+- Conform your `State` type with `LoadedState`. This will require you to hold on to an instance of your `LoadingState`.
 
 ```swift
 struct MyFeature: LoadableReducerProtocol {
   struct LoadingState: Equatable { // Your LoadingState must conform to `Equatable`.
-    let url: URL
+    var url: URL
   }
 
-  struct State: Equatable {
-    let currentUrl: URL
+  struct State: LoadedState {
+    var loadingState: LoadingState 
     // ...
   }
 
@@ -49,28 +51,28 @@ struct MyFeature: LoadableReducerProtocol {
 ```
 
 > **Note**
->
 > By default, your reducer does the first load when the initial view appears, but you can customise that by providing your own initial view (see [The view](#the-view)).
 
-**[Optional]** You may refresh or reload the reducer based on a "ready" action.
+**[Optional]** You may refresh or reload the reducer based on a "ready" action. Refreshing will preserve your current loaded content, reloading will not.
 
 ```swift
 struct MyFeature: LoadableReducerProtocol {
   // ...
 
-  func updateRequest(for state: State, action: Action) -> UpdateRequest<LoadingState> {
+  func updateRequest(for action: Action) -> UpdateRequest? {
     if action == .reload {
-      return .reload(.init(url: state.currentUrl)) // You must provide a new instance of a `LoadingState` here.
+      return .reload // the `loadingState` from your current `State` will be used, so you
+      may update that accordingly in your reducer.
     }
 
-    return .ignore // no actions trigger a reload when the reducer is ready by default.
+    return nil // no actions trigger a reload when the reducer is ready by default.
   }
 }
 ```
 
 ### The view
 
-You can build a view for your loadable reducer with `WithLoadableStore(...)`.
+You can build a view for your loadable reducer with `WithLoadableStore(...)`. An optional `animation` parameter gives you control over the transition animation between states. 
 
 ```swift
 struct MyFeatureView: View {
@@ -88,6 +90,9 @@ struct MyFeatureView: View {
 ```
 
 **[Optional]** You may override the default loading view. When doing so, make sure to trigger the built-in `load` action at some point, or the loading will never start.
+
+> **Note**
+> The same applies for the error view and its `retry` action.
 
 ```swift
 struct MyFeatureView: View {
@@ -117,8 +122,8 @@ MyFeatureView(
     initialState: .init(url: URL(string: "https://gogle.com")!),
     reducer: MyFeature.init,
     load: { state in
-      try? await Task.sleep(for: .seconds(2)) // example of asynchronous work, for now, it must not fail.
-      return .init(currentUrl: state.url)
+      try await Task.sleep(for: .seconds(2)) // example of asynchronous work. If this fails, the error state will become active.
+      return .init(loadingState: state) // pass along your initial state to the ready state for reloading and refreshing when needed.
     }
   )
 )
@@ -126,7 +131,7 @@ MyFeatureView(
 
 ## Missing features
 
-- [ ] Proper error handling: built-in error view and `retry` action.
+- [X] Proper error handling: built-in error view and `retry` action.
 - [X] Task cancellation tweaks.
 
 ## License

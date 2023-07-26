@@ -38,7 +38,7 @@ public extension Store {
       @ReducerBuilder<R.State, R.Action> reducer: () -> R,
       load: @escaping Load<R>,
       withDependencies prepareDependencies: ((inout DependencyValues) -> Void)? = nil
-    ) where State == LoadableState<R>, Action == _LoadableAction<R> {
+    ) where State == _LoadableState<R>, Action == _LoadableAction<R> {
         self.init(
             initialState: .loading(initialState()),
             reducer: {

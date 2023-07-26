@@ -24,40 +24,76 @@ import ComposableArchitecture
 import SwiftUI
 
 /// A helper view to deal with loadable stores from ``LoadableReducerProtocol`` types.
-public struct WithLoadableStore<Reducer: LoadableReducerProtocol, Loaded: View, Loading: View>: View {
+public struct WithLoadableStore<
+    Reducer: LoadableReducerProtocol,
+    LoadedView: View,
+    LoadingView: View,
+    ErrorView: View
+>: View {
     /// A store to the loadable state from your loadable reducer.
     let store: Reducer.LoadableStore
+    /// An animation to be used for transition between views. Defaults to `nil`.
+    let animation: Animation?
 
     /// A function providing the ready view. Akin to a regular `body` in a plain `SwiftUI.View`.
-    let loaded: (StoreOf<Reducer>) -> Loaded
+    let loadedView: (StoreOf<Reducer>) -> LoadedView
     /// A function providing the initial view. A default implementation is used when `nil`.
-    let loading: ((Reducer.LoadingStore) -> Loading)?
+    let loadingView: ((Reducer.LoadingStore) -> LoadingView)?
+    /// A function providing the error view. A default implementation is used when `nil`.
+    let errorView: ((Reducer.ErrorStore) -> ErrorView)?
 
     public var body: some View {
-        SwitchStore(store) {
-            CaseLet(
-                state: /_LoadingReducer<Reducer>.State.loading,
-                action: _LoadingReducer<Reducer>.Action.loading
-            ) { loadingStore in
-                Group {
-                    if let loading {
-                        loading(loadingStore)
-                    } else {
-                        WithViewStore(loadingStore) { viewStore in
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+        WithViewStore(store, observe: \.asCaseString) { viewStore in
+            SwitchStore(store) {
+                CaseLet(
+                    state: /_LoadingReducer<Reducer>.State.loading,
+                    action: _LoadingReducer<Reducer>.Action.loading
+                ) { loadingStore in
+                    Group {
+                        if let loadingView {
+                            loadingView(loadingStore)
+                        } else {
+                            WithViewStore(loadingStore) { innerViewStore in
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .onAppear { innerViewStore.send(.load) }
+                            }
+                        }
+                    }
+                }
+                
+                CaseLet(
+                    state: /_LoadingReducer<Reducer>.State.loaded,
+                    action: _LoadingReducer<Reducer>.Action.loaded,
+                    then: loadedView
+                )
+                
+                CaseLet(
+                    state: /_LoadingReducer<Reducer>.State.error,
+                    action: _LoadingReducer<Reducer>.Action.error
+                ) { errorStore in
+                    Group {
+                        if let errorView {
+                            errorView(errorStore)
+                        } else {
+                            WithViewStore(errorStore) { innerViewStore in
+                                VStack {
+                                    Text(innerViewStore.error.localizedDescription)
+                                        .multilineTextAlignment(.center)
+                                    Button {
+                                        innerViewStore.send(.retry)
+                                    } label: {
+                                        Text("Retry")
+                                    }
+                                }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .onAppear { viewStore.send(.load) }
+                            }
                         }
                     }
                 }
             }
-
-            CaseLet(
-                state: /_LoadingReducer<Reducer>.State.loaded,
-                action: _LoadingReducer<Reducer>.Action.loaded,
-                then: loaded
-            )
+            .animation(animation, value: viewStore.state)
         }
     }
 
@@ -67,11 +103,14 @@ public struct WithLoadableStore<Reducer: LoadableReducerProtocol, Loaded: View, 
     ///   - loaded: The view builder for when the reducer is ready.
     public init(
         _ store: Reducer.LoadableStore,
-        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> Loaded
-    ) where Loading == EmptyView {
+        animation: Animation? = nil,
+        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView
+    ) where LoadingView == EmptyView, ErrorView == EmptyView {
         self.store = store
-        self.loaded = loaded
-        self.loading = nil
+        self.animation = animation
+        self.loadedView = loaded
+        self.loadingView = nil
+        self.errorView = nil
     }
 
     /// Creates a new loaded view and loading view from a given loadable store.
@@ -81,11 +120,52 @@ public struct WithLoadableStore<Reducer: LoadableReducerProtocol, Loaded: View, 
     ///   - loading: The view builder for when the reducer is started.
     public init(
         _ store: Reducer.LoadableStore,
-        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> Loaded,
-        @ViewBuilder loading: @escaping (Reducer.LoadingStore) -> Loading
+        animation: Animation? = nil,
+        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView,
+        @ViewBuilder loading: @escaping (Reducer.LoadingStore) -> LoadingView
+    ) where ErrorView == EmptyView {
+        self.store = store
+        self.animation = animation
+        self.loadedView = loaded
+        self.loadingView = loading
+        self.errorView = nil
+    }
+
+    /// Creates a new loaded view and error view from a given loadable store.
+    /// - Parameters:
+    ///   - store: A store to the loadable state from your loadable reducer.
+    ///   - loaded: The view builder for when the reducer is ready.
+    ///   - error: The view builder for when the reducer fails to load.
+    public init(
+        _ store: Reducer.LoadableStore,
+        animation: Animation? = nil,
+        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView,
+        @ViewBuilder error: @escaping (Reducer.ErrorStore) -> ErrorView
+    ) where LoadingView == EmptyView {
+        self.store = store
+        self.animation = animation
+        self.loadedView = loaded
+        self.loadingView = nil
+        self.errorView = error
+    }
+
+    /// Creates a new loaded view and loading view from a given loadable store.
+    /// - Parameters:
+    ///   - store: A store to the loadable state from your loadable reducer.
+    ///   - loaded: The view builder for when the reducer is ready.
+    ///   - loading: The view builder for when the reducer is started.
+    ///   - error: The view builder for when the reducer fails to load.
+    public init(
+        _ store: Reducer.LoadableStore,
+        animation: Animation? = nil,
+        @ViewBuilder loaded: @escaping (StoreOf<Reducer>) -> LoadedView,
+        @ViewBuilder loading: @escaping (Reducer.LoadingStore) -> LoadingView,
+        @ViewBuilder error: @escaping (Reducer.ErrorStore) -> ErrorView
     ) {
         self.store = store
-        self.loaded = loaded
-        self.loading = loading
+        self.animation = animation
+        self.loadedView = loaded
+        self.loadingView = loading
+        self.errorView = error
     }
 }

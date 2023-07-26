@@ -29,22 +29,33 @@ struct MyFeature: LoadableReducerProtocol {
         let url: URL
     }
 
-    struct State: Equatable {
-        let lastUrl: URL
+    struct State: LoadedState {
+        var loadingState: LoadingState
+        var isRefreshing: Bool = false
     }
 
     enum Action {
-        case yada
         case reload
+        case refresh
     }
 
-    var body: some ReducerProtocolOf<Self> { EmptyReducer() }
+    var body: some ReducerProtocolOf<Self> {
+        Reduce { state, action in
+            if case .refresh = action {
+                state.isRefreshing = true
+            }
 
-    func updateRequest(for state: State, action: Action) -> UpdateRequest<LoadingState> {
+            return .none
+        }
+    }
+
+    func updateRequest(for action: Action) -> UpdateRequest? {
         if action == .reload {
-            return .reload(.init(url: state.lastUrl))
+            return .reload
+        } else if action == .refresh {
+            return .refresh
         }
 
-        return .ignore
+        return nil
     }
 }

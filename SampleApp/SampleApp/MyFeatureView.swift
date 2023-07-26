@@ -30,10 +30,24 @@ struct MyFeatureView: View {
     var body: some View {
         WithLoadableStore(store) { loadedStore in
             WithViewStore(loadedStore) { viewStore in
-                (Text("Ready. ") + Text("Tap to reload.").bold())
-                    .onTapGesture {
-                        viewStore.send(.reload)
+                VStack {
+                    (Text("Ready. ") + Text("Tap to reload...").bold())
+                        .onTapGesture {
+                            viewStore.send(.reload)
+                        }
+
+                    HStack {
+                        (Text("... or ") + Text("Tap to refresh.").bold())
+                            .onTapGesture {
+                                viewStore.send(.refresh)
+                            }
+                        
+                        if viewStore.isRefreshing {
+                            ProgressView()
+                        }
                     }
+                    .frame(minHeight: 20)
+                }
             }
         } loading: { loadingStore in
             WithViewStore(loadingStore) { viewStore in

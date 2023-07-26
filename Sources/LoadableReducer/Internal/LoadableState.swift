@@ -23,11 +23,25 @@
 import ComposableArchitecture
 import SwiftUI
 
-/// A piece of State that can start with essential data, and load the rest
-/// asynchronously.
-public enum LoadableState<Reducer: LoadableReducerProtocol>: Equatable {
-    /// The state is initial, and contains data to start a load.
+public enum _LoadableState<Reducer: LoadableReducerProtocol>: Equatable {
     case loading(Reducer.LoadingState)
-    /// The state is ready, and contains all the data the feature needs.
     case loaded(Reducer.State)
+    case error(_ErrorState<Reducer.LoadingState>)
+
+    internal var asCaseString: String {
+        switch self {
+        case .loading: return "loading"
+        case .loaded: return "loaded"
+        case .error: return "error"
+        }
+    }
+}
+
+public struct _ErrorState<LoadingState: Equatable>: Equatable {
+    let loadingState: LoadingState
+    let error: Error
+    
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        String(reflecting: lhs.error) == String(reflecting: rhs.error)
+    }
 }

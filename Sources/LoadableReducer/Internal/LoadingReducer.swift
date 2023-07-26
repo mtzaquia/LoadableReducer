@@ -24,7 +24,7 @@ import ComposableArchitecture
 import Foundation
 
 struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
-    typealias State = LoadableState<Reducer>
+    typealias State = _LoadableState<Reducer>
     typealias Action = _LoadableAction<Reducer>
 
     private let load: Load<Reducer>
@@ -50,28 +50,58 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
                 return .none
 
             case .loading(.onLoaded(.failure(let error))):
-                print(error)
-                return .none
+                switch state {
+                case .loading(let loadingState):
+                    state = .error(
+                        .init(loadingState: loadingState, error: error)
+                    )
+                    return .none
+
+                case .loaded(let loadedState):
+                    state = .error(
+                        .init(loadingState: loadedState.loadingState, error: error)
+                    )
+                    return .none
+
+                case .error(let errorState):
+                    state = .error(
+                        .init(loadingState: errorState.loadingState, error: error)
+                    )
+                    return .none
+                }
 
             case .loaded(let readyAction):
                 guard case .loaded(let readyState) = state else {
                     return .none
                 }
 
-                switch reducer.updateRequest(for: readyState, action: readyAction) {
-                case .refresh(let loadingState):
-                    return handleLoad(loadingState)
-                case .reload(let loadingState):
+                let loadingState = readyState.loadingState
+
+                switch reducer.updateRequest(for: readyAction) {
+                case .reload:
                     state = .loading(loadingState)
-                    return handleLoad(loadingState)
-                case .ignore:
-                    return .none
+                    fallthrough
+                case .refresh: return handleLoad(loadingState)
+                case .none: return .none
                 }
+
+            case .error(.retry):
+                let loadingState = {
+                    switch state {
+                    case .loaded(let loadedState): return loadedState.loadingState
+                    case .error(let errorState): return errorState.loadingState
+                    case .loading(let loadingState): return loadingState
+                    }
+                }()
+
+                state = .loading(loadingState)
+                return handleLoad(loadingState)
             }
         }
         .ifCaseLet(/State.loaded, action: /Action.loaded) {
             reducer
         }
+        ._printChanges()
     }
 
     init(
@@ -86,7 +116,7 @@ struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
         .concatenate(
             .cancel(id: CancelID.load),
             .run { send in
-                let loadedState = await load(loadingState)
+                let loadedState = try await load(loadingState)
                 await send(.loading(.onLoaded(.success(loadedState))))
             } catch: { error, send in
                 await send(.loading(.onLoaded(.failure(error))))

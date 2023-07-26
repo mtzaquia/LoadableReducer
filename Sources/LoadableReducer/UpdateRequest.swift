@@ -20,8 +20,17 @@
 //  SOFTWARE.
 //
 
-import ComposableArchitecture
 import Foundation
 
-/// An alias for a loading closure that receives a ``LoadingState`` and returns a ready state for the reducer.
-public typealias Load<Reducer: LoadableReducerProtocol> = (_ state: Reducer.LoadingState) async throws -> Reducer.State
+/// An update request object, used to make a decision on whether the feature
+/// should refresh or reload.
+public enum UpdateRequest {
+    /// Trigger a reload using the latest loading state.
+    /// - Important: When reloading, the feature will shift to a loading state.
+    case reload
+    /// Trigger a refresh using the latest loading state.
+    /// - Important: When refreshing, the feature will remain ready and update inline once data is available.
+    case refresh
+}
+
+

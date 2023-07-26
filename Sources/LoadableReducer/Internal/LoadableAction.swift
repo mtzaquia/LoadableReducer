@@ -21,7 +21,19 @@
 //
 
 import ComposableArchitecture
-import Foundation
+import SwiftUI
 
-/// An alias for a loading closure that receives a ``LoadingState`` and returns a ready state for the reducer.
-public typealias Load<Reducer: LoadableReducerProtocol> = (_ state: Reducer.LoadingState) async throws -> Reducer.State
+public enum _LoadableAction<Reducer: LoadableReducerProtocol> {
+    case loading(LoadingAction)
+    case loaded(Reducer.Action)
+    case error(ErrorAction)
+
+    public enum LoadingAction {
+        case load
+        case onLoaded(TaskResult<Reducer.State>)
+    }
+
+    public enum ErrorAction {
+        case retry
+    }
+}

@@ -33,8 +33,13 @@ struct SampleApp: App {
                     initialState: .init(url: URL(string: "https://gogle.com")!),
                     reducer: MyFeature.init,
                     load: { state in
-                        try? await Task.sleep(for: .seconds(2))
-                        return .init(lastUrl: state.url)
+                        try await Task.sleep(for: .seconds(2))
+
+                        if Bool.random() {
+                            throw URLError(.cancelled)
+                        }
+
+                        return .init(loadingState: state)
                     }
                 )
             )

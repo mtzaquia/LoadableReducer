@@ -20,15 +20,10 @@
 //  SOFTWARE.
 //
 
-import ComposableArchitecture
-import SwiftUI
+import Foundation
 
-public enum _LoadableAction<Reducer: LoadableReducerProtocol> {
-    case loading(LoadingAction)
-    case loaded(Reducer.Action)
-
-    public enum LoadingAction {
-        case load
-        case onLoaded(TaskResult<Reducer.State>)
-    }
+public protocol LoadedState: Equatable {
+    associatedtype LoadingState: Equatable
+    var loadingState: LoadingState { get set }
 }
+
