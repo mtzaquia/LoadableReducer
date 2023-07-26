@@ -56,7 +56,7 @@ struct MyFeature: LoadableReducerProtocol {
             }
         }
         .ifLet(\.$other, action: /Action.other) {
-            OtherFeature()
+            LoadingReducer(reducer: OtherFeature())
         }
     }
 }

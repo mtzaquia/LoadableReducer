@@ -23,9 +23,44 @@
 import ComposableArchitecture
 import Foundation
 
-public struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
-    public typealias State = _LoadableState<Reducer>
-    public typealias Action = _LoadableAction<Reducer>
+/// A concrete reducer type that can manage the lifecycle events of a ``LoadableReducerProtocol``.
+public struct LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
+    public enum State: Equatable {
+        case loading(Reducer.LoadingState)
+        case loaded(Reducer.State)
+        case error(_ErrorState)
+
+        public struct _ErrorState: Equatable {
+            let loadingState: Reducer.LoadingState
+            let error: Error
+            public static func == (lhs: Self, rhs: Self) -> Bool {
+                String(reflecting: lhs.error) == String(reflecting: rhs.error)
+            }
+        }
+
+        internal var asCaseString: String {
+            switch self {
+            case .loading: return "loading"
+            case .loaded: return "loaded"
+            case .error: return "error"
+            }
+        }
+    }
+
+    public enum Action {
+        case loading(_LoadingAction)
+        case loaded(Reducer.Action)
+        case error(_ErrorAction)
+
+        public enum _LoadingAction {
+            case load
+            case onLoaded(TaskResult<Reducer.State>)
+        }
+
+        public enum _ErrorAction {
+            case retry
+        }
+    }
 
     private let reducer: Reducer
     private enum CancelID {
@@ -101,7 +136,9 @@ public struct _LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol
         }
     }
 
-    init(reducer: Reducer) {
+    /// Creates a concrete reducer to handle the lifecycle of the wrapped ``Reducer``.
+    /// - Parameter reducer: The wrapped, loadable reducer.
+    public init(reducer: Reducer) {
         self.reducer = reducer
     }
 

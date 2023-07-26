@@ -25,7 +25,7 @@ import LoadableReducer
 import SwiftUI
 
 struct OtherFeatureView: View {
-    let store: OtherFeature.LoadableStore
+    let store: LoadableStoreOf<OtherFeature>
 
     var body: some View {
         WithLoadableStore(store) { loadedStore in

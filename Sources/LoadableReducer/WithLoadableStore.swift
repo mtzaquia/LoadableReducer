@@ -31,7 +31,7 @@ public struct WithLoadableStore<
     ErrorView: View
 >: View {
     /// A store to the loadable state from your loadable reducer.
-    let store: Reducer.LoadableStore
+    let store: StoreOf<LoadingReducer<Reducer>>
     /// An animation to be used for transition between views. Defaults to `nil`.
     let animation: Animation?
 
@@ -40,11 +40,11 @@ public struct WithLoadableStore<
     ) -> LoadedView
 
     public typealias LoadingBuilder = (
-        Store<Reducer.LoadingState, _LoadableAction<Reducer>.LoadingAction>
+        Store<Reducer.LoadingState, LoadingReducer<Reducer>.Action._LoadingAction>
     ) -> LoadingView
 
     public typealias ErrorBuilder = (
-        Store<_ErrorState<Reducer.LoadingState>, _LoadableAction<Reducer>.ErrorAction>
+        Store<LoadingReducer<Reducer>.State._ErrorState, LoadingReducer<Reducer>.Action._ErrorAction>
     ) -> ErrorView
 
     /// A function providing the ready view. Akin to a regular `body` in a plain `SwiftUI.View`.
@@ -58,8 +58,8 @@ public struct WithLoadableStore<
         WithViewStore(store, observe: \.asCaseString) { viewStore in
             SwitchStore(store) {
                 CaseLet(
-                    state: /_LoadingReducer<Reducer>.State.loading,
-                    action: _LoadingReducer<Reducer>.Action.loading
+                    state: /LoadingReducer<Reducer>.State.loading,
+                    action: LoadingReducer<Reducer>.Action.loading
                 ) { loadingStore in
                     Group {
                         if let loadingView {
@@ -76,14 +76,14 @@ public struct WithLoadableStore<
                 }
                 
                 CaseLet(
-                    state: /_LoadingReducer<Reducer>.State.loaded,
-                    action: _LoadingReducer<Reducer>.Action.loaded,
+                    state: /LoadingReducer<Reducer>.State.loaded,
+                    action: LoadingReducer<Reducer>.Action.loaded,
                     then: loadedView
                 )
                 
                 CaseLet(
-                    state: /_LoadingReducer<Reducer>.State.error,
-                    action: _LoadingReducer<Reducer>.Action.error
+                    state: /LoadingReducer<Reducer>.State.error,
+                    action: LoadingReducer<Reducer>.Action.error
                 ) { errorStore in
                     Group {
                         if let errorView {
@@ -114,7 +114,7 @@ public struct WithLoadableStore<
     ///   - store: A store to the loadable state from your loadable reducer.
     ///   - loaded: The view builder for when the reducer is ready.
     public init(
-        _ store: Reducer.LoadableStore,
+        _ store: StoreOf<LoadingReducer<Reducer>>,
         animation: Animation? = nil,
         @ViewBuilder loaded: @escaping LoadedBuilder
     ) where LoadingView == EmptyView, ErrorView == EmptyView {
@@ -131,7 +131,7 @@ public struct WithLoadableStore<
     ///   - loaded: The view builder for when the reducer is ready.
     ///   - loading: The view builder for when the reducer is started.
     public init(
-        _ store: Reducer.LoadableStore,
+        _ store: StoreOf<LoadingReducer<Reducer>>,
         animation: Animation? = nil,
         @ViewBuilder loaded: @escaping LoadedBuilder,
         @ViewBuilder loading: @escaping LoadingBuilder
@@ -149,7 +149,7 @@ public struct WithLoadableStore<
     ///   - loaded: The view builder for when the reducer is ready.
     ///   - error: The view builder for when the reducer fails to load.
     public init(
-        _ store: Reducer.LoadableStore,
+        _ store: StoreOf<LoadingReducer<Reducer>>,
         animation: Animation? = nil,
         @ViewBuilder loaded: @escaping LoadedBuilder,
         @ViewBuilder error: @escaping ErrorBuilder
@@ -168,7 +168,7 @@ public struct WithLoadableStore<
     ///   - loading: The view builder for when the reducer is started.
     ///   - error: The view builder for when the reducer fails to load.
     public init(
-        _ store: Reducer.LoadableStore,
+        _ store: StoreOf<LoadingReducer<Reducer>>,
         animation: Animation? = nil,
         @ViewBuilder loaded: @escaping LoadedBuilder,
         @ViewBuilder loading: @escaping LoadingBuilder,

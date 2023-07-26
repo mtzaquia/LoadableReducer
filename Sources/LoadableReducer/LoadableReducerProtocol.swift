@@ -29,14 +29,10 @@ public protocol LoadableReducerProtocol: ReducerProtocol where State: LoadedStat
     /// The type of the State containing the initial data for loading.
     associatedtype LoadingState: Equatable
 
-    /// An alias to the loadable store, or top-level store, that will manage the
-    /// loading for this reducer.
-    typealias LoadableStore = Store<_LoadableState<Self>, _LoadableAction<Self>>
-
     /// The loadable state, which should be used when composing reducers together.
-    typealias LoadableState = _LoadableState<Self>
+    typealias LoadableState = LoadingReducer<Self>.State
     /// The loadable action, which should be used when composing reducers together.
-    typealias LoadableAction = _LoadableAction<Self>
+    typealias LoadableAction = LoadingReducer<Self>.Action
 
     /// The asynchronous function responsible for loading the data and providing a ready state back into the application.
     ///

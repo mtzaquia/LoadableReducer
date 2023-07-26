@@ -25,10 +25,10 @@ import LoadableReducer
 import SwiftUI
 
 struct MyFeatureView: View {
-    let store: MyFeature.LoadableStore
+    let store: LoadableStoreOf<MyFeature>
 
     var body: some View {
-        WithLoadableStore(store) { loadedStore in
+        WithLoadableStore(store, animation: .default) { loadedStore in
             WithViewStore(loadedStore) { viewStore in
                 VStack {
                     VStack {
