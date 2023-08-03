@@ -24,7 +24,7 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct OtherFeature: LoadableReducerProtocol {
+struct OtherFeature: LoadableReducer {
     struct State: LoadedState {
         var loadingState: LoadingState
         var greeting: String
@@ -34,7 +34,7 @@ struct OtherFeature: LoadableReducerProtocol {
         case noop
     }
 
-    var body: some ReducerProtocolOf<Self> {
+    var body: some ReducerOf<Self> {
         EmptyReducer()
     }
 }

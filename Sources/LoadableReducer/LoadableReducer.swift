@@ -23,9 +23,9 @@
 import ComposableArchitecture
 import Foundation
 
-/// A protocol declaring a ``ReducerProtocol`` that needs to load additional
+/// A protocol declaring a ``Reducer`` that needs to load additional
 /// data asynchronously to be ready, starting from an initial state.
-public protocol LoadableReducerProtocol: ReducerProtocol where State: LoadedState, State.LoadingState == LoadingState {
+public protocol LoadableReducer: Reducer where State: LoadedState, State.LoadingState == LoadingState {
     /// The type of the State containing the initial data for loading.
     associatedtype LoadingState: Equatable
 
@@ -47,6 +47,6 @@ public protocol LoadableReducerProtocol: ReducerProtocol where State: LoadedStat
     func updateRequest(for action: Action) -> UpdateRequest?
 }
 
-public extension LoadableReducerProtocol {
+public extension LoadableReducer {
     func updateRequest(for action: Action) -> UpdateRequest? { nil }
 }

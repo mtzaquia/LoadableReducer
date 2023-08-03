@@ -23,4 +23,4 @@
 import ComposableArchitecture
 import Foundation
 
-public typealias LoadableStoreOf<R: LoadableReducerProtocol> = StoreOf<LoadingReducer<R>>
+public typealias LoadableStoreOf<LR: LoadableReducer> = StoreOf<LoadingReducer<LR>>

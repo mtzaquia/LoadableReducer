@@ -23,15 +23,15 @@
 import ComposableArchitecture
 import Foundation
 
-/// A concrete reducer type that can manage the lifecycle events of a ``LoadableReducerProtocol``.
-public struct LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol {
+/// A concrete reducer type that can manage the lifecycle events of a ``LoadableReducer``.
+public struct LoadingReducer<LR: LoadableReducer>: Reducer {
     public enum State: Equatable {
-        case loading(Reducer.LoadingState)
-        case loaded(Reducer.State)
+        case loading(LR.LoadingState)
+        case loaded(LR.State)
         case error(_ErrorState)
 
         public struct _ErrorState: Equatable {
-            let loadingState: Reducer.LoadingState
+            let loadingState: LR.LoadingState
             let error: Error
             public static func == (lhs: Self, rhs: Self) -> Bool {
                 String(reflecting: lhs.error) == String(reflecting: rhs.error)
@@ -49,12 +49,12 @@ public struct LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol 
 
     public enum Action {
         case loading(_LoadingAction)
-        case loaded(Reducer.Action)
+        case loaded(LR.Action)
         case error(_ErrorAction)
 
         public enum _LoadingAction {
             case load
-            case onLoaded(TaskResult<Reducer.State>)
+            case onLoaded(TaskResult<LR.State>)
         }
 
         public enum _ErrorAction {
@@ -62,12 +62,12 @@ public struct LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol 
         }
     }
 
-    private let reducer: Reducer
+    private let reducer: LR
     private enum CancelID {
         case load
     }
 
-    public var body: some ReducerProtocolOf<Self> {
+    public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .loading(.load):
@@ -138,11 +138,11 @@ public struct LoadingReducer<Reducer: LoadableReducerProtocol>: ReducerProtocol 
 
     /// Creates a concrete reducer to handle the lifecycle of the wrapped ``Reducer``.
     /// - Parameter reducer: The wrapped, loadable reducer.
-    public init(reducer: Reducer) {
+    public init(reducer: LR) {
         self.reducer = reducer
     }
 
-    private func handleLoad(_ loadingState: Reducer.LoadingState) -> EffectTask<Action> {
+    private func handleLoad(_ loadingState: LR.LoadingState) -> Effect<Action> {
         .concatenate(
             .cancel(id: CancelID.load),
             .run { send in
