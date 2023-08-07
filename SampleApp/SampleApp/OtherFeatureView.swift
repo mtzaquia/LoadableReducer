@@ -29,7 +29,7 @@ struct OtherFeatureView: View {
 
     var body: some View {
         WithLoadableStore(store) { loadedStore in
-            WithViewStore(loadedStore) { viewStore in
+            WithViewStore(loadedStore, observe: { $0 }) { viewStore in
                 Text(viewStore.greeting)
             }
         }

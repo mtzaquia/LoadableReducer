@@ -29,7 +29,7 @@ struct MyFeatureView: View {
 
     var body: some View {
         WithLoadableStore(store, animation: .default) { loadedStore in
-            WithViewStore(loadedStore) { viewStore in
+            WithViewStore(loadedStore, observe: { $0 }) { viewStore in
                 VStack {
                     VStack {
                         Text("Ready.")

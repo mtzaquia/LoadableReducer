@@ -45,6 +45,14 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
             case .error: return "error"
             }
         }
+
+        internal var loadingState: LR.LoadingState {
+            switch self {
+            case .loaded(let loadedState): return loadedState.loadingState
+            case .error(let errorState): return errorState.loadingState
+            case .loading(let loadingState): return loadingState
+            }
+        }
     }
 
     public enum Action {
@@ -83,25 +91,8 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
                 return .none
 
             case .loading(.onLoaded(.failure(let error))):
-                switch state {
-                case .loading(let loadingState):
-                    state = .error(
-                        .init(loadingState: loadingState, error: error)
-                    )
-                    return .none
-
-                case .loaded(let loadedState):
-                    state = .error(
-                        .init(loadingState: loadedState.loadingState, error: error)
-                    )
-                    return .none
-
-                case .error(let errorState):
-                    state = .error(
-                        .init(loadingState: errorState.loadingState, error: error)
-                    )
-                    return .none
-                }
+                state = .error(.init(loadingState: state.loadingState, error: error))
+                return .none
 
             case .loaded(let readyAction):
                 guard case .loaded(let readyState) = state else {
@@ -119,14 +110,7 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
                 }
 
             case .error(.retry):
-                let loadingState = {
-                    switch state {
-                    case .loaded(let loadedState): return loadedState.loadingState
-                    case .error(let errorState): return errorState.loadingState
-                    case .loading(let loadingState): return loadingState
-                    }
-                }()
-
+                let loadingState = state.loadingState
                 state = .loading(loadingState)
                 return handleLoad(loadingState)
             }
