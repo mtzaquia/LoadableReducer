@@ -23,8 +23,8 @@
 import ComposableArchitecture
 import Foundation
 
-/// A concrete reducer type that can manage the lifecycle events of a ``LoadableReducer``.
-public struct LoadingReducer<LR: LoadableReducer>: Reducer {
+/// A concrete reducer type that can manage the lifecycle events of a ``LoadableReducerProtocol``.
+public struct LoadingReducer<LR: LoadableReducerProtocol>: ReducerProtocol {
     public enum State: Equatable {
         case loading(LR.LoadingState)
         case loaded(LR.State)
@@ -75,7 +75,7 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
         case load
     }
 
-    public var body: some ReducerOf<Self> {
+    public var body: some ReducerProtocolOf<Self> {
         Reduce { state, action in
             switch action {
             case .loading(.load):
@@ -126,7 +126,7 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
         self.reducer = reducer
     }
 
-    private func handleLoad(_ loadingState: LR.LoadingState) -> Effect<Action> {
+    private func handleLoad(_ loadingState: LR.LoadingState) -> EffectTask<Action> {
         .concatenate(
             .cancel(id: CancelID.load),
             .run { send in

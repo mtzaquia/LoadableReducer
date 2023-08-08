@@ -17,32 +17,32 @@ dependencies: [
 
 ## Usage
 
-You can use the `LoadableReducer` in 3 simple steps: reducer, view, and store.
+You can use the `LoadableReducerProtocol` in 3 simple steps: reducer, view, and store.
 
 ### The reducer
 
-Conform your new reducer with `LoadableReducer`, and implement your TCA reducer as you normally would:
+Conform your new reducer with `LoadableReducerProtocol`, and implement your TCA reducer as you normally would:
 
 ```swift
-struct MyFeature: LoadableReducer { // instead of `Reducer`
+struct MyFeature: LoadableReducerProtocol { // instead of `ReducerProtocol`
   // ...
 }
 ```
 
-There are three required steps to conform to `LoadableReducer`:
+There are three required steps to conform to `LoadableReducerProtocol`:
 1. Conform your `State` to `LoadedState`. This will require you to hold on to an instance of your `LoadingState`;
 2. Provide a `LoadingState` type that includes data you will have available when the feature starts, but before it fully loads;
 3. Declare the `load(_:)` function. It receives the `LoadingState` and returns the reducer's `State`.
 
 ```swift
-struct MyFeature: LoadableReducer {
+struct MyFeature: LoadableReducerProtocol {
   struct State: LoadedState { // 1. conform your state to `LoadedState`
     var loadingState: LoadingState 
     /* ... */
   }
 
   enum Action { /* ... */ }
-  var body: some ReducerOf<Self> { /* ... */ }
+  var body: some ReducerProtocolOf<Self> { /* ... */ }
 }
 
 extension MyFeature {
@@ -62,7 +62,7 @@ extension MyFeature {
 **[Optional]** You may refresh or reload the reducer based on a "ready" action. Refreshing will preserve your current loaded content, but reloading will not.
 
 ```swift
-struct MyFeature: LoadableReducer {
+struct MyFeature: LoadableReducerProtocol {
   /* ... */
    
   enum Action {
@@ -130,7 +130,7 @@ struct MyFeatureView: View {
 
 ### The store
 
-When creating your store, make sure to wrap your `LoadableReducer` within a `LoadingReducer`.
+When creating your store, make sure to wrap your `LoadableReducerProtocol` within a `LoadingReducer`.
 
 ```swift
 MyFeatureView(
@@ -144,10 +144,10 @@ MyFeatureView(
 
 ### Composing
 
-When composing features, refer to the `LoadableState` and `LoadableAction` of your `LoadableReducer`, and don't forget to wrap your composed reducer in a `LoadingReducer`, too.
+When composing features, refer to the `LoadableState` and `LoadableAction` of your `LoadableReducerProtocol`, and don't forget to wrap your composed reducer in a `LoadingReducer`, too.
 
 ```swift
-struct MyFeature: LoadableReducer {
+struct MyFeature: LoadableReducerProtocol {
   struct State: LoadedState {
     // Refer to the `LoadableState` instead of `State`.
     @PresentationState var other: OtherFeature.LoadableState? 
@@ -162,7 +162,7 @@ struct MyFeature: LoadableReducer {
     /* ... */
   }
 
-  var body: some ReducerOf<Self> {
+  var body: some ReducerProtocolOf<Self> {
     Reduce { /* ... */ }
       .ifLet(\.$other, action: /Action.other) {
         // Don't forget to wrap your reducer in a `LoadingReducer`!

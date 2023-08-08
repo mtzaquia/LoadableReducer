@@ -25,7 +25,7 @@ import Foundation
 
 /// A protocol declaring a ``Reducer`` that needs to load additional
 /// data asynchronously to be ready, starting from an initial state.
-public protocol LoadableReducer: Reducer where State: LoadedState, State.LoadingState == LoadingState {
+public protocol LoadableReducerProtocol: ReducerProtocol where State: LoadedState, State.LoadingState == LoadingState {
     /// The type of the State containing the initial data for loading.
     associatedtype LoadingState: Equatable
 
@@ -47,6 +47,6 @@ public protocol LoadableReducer: Reducer where State: LoadedState, State.Loading
     func updateRequest(for action: Action) -> UpdateRequest?
 }
 
-public extension LoadableReducer {
+public extension LoadableReducerProtocol {
     func updateRequest(for action: Action) -> UpdateRequest? { nil }
 }

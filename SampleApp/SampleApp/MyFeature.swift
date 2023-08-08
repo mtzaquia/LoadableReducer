@@ -24,7 +24,7 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct MyFeature: LoadableReducer {
+struct MyFeature: LoadableReducerProtocol {
     struct State: LoadedState {
         var loadingState: LoadingState
         var isRefreshing: Bool = false
@@ -40,7 +40,7 @@ struct MyFeature: LoadableReducer {
         case other(PresentationAction<OtherFeature.LoadableAction>)
     }
 
-    var body: some ReducerOf<Self> {
+    var body: some ReducerProtocolOf<Self> {
         Reduce { state, action in
             switch action {
             case .refresh:

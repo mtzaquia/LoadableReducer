@@ -23,9 +23,9 @@
 import ComposableArchitecture
 import SwiftUI
 
-/// A helper view to deal with loadable stores from ``LoadableReducer`` types.
+/// A helper view to deal with loadable stores from ``LoadableReducerProtocol`` types.
 public struct WithLoadableStore<
-    LR: LoadableReducer,
+    LR: LoadableReducerProtocol,
     LoadedView: View,
     LoadingView: View,
     ErrorView: View
