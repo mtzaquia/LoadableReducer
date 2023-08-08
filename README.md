@@ -13,7 +13,7 @@ dependencies: [
 ```
 
 > **Note:**
-> If you haven't migrated to TCA `1.0.0`, you can use version `0.0.9`.
+> If you haven't migrated to TCA `1.0.0`, the branch `zaquia/0.9.0` uses TCA `0.55.1`.
 
 ## Usage
 
