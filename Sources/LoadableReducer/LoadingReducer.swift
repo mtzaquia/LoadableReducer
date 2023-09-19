@@ -46,7 +46,8 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
             }
         }
 
-        internal var loadingState: LR.LoadingState {
+        /// The loading state for this reducer, which is stored and shared across loading states.
+        public var loadingState: LR.LoadingState {
             switch self {
             case .loaded(let loadedState): return loadedState.loadingState
             case .error(let errorState): return errorState.loadingState
