@@ -32,7 +32,8 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
 
         public struct _ErrorState: Equatable {
             let loadingState: LR.LoadingState
-            let error: Error
+            /// The error that occurred during loading. Useful if you are building your own error UI.
+            public let error: Error
             public static func == (lhs: Self, rhs: Self) -> Bool {
                 String(reflecting: lhs.error) == String(reflecting: rhs.error)
             }
