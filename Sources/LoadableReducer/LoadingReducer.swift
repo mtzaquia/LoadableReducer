@@ -106,9 +106,13 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
                 switch reducer.updateRequest(for: readyAction) {
                 case .reload:
                     state = .loading(loadingState)
-                    fallthrough
-                case .refresh: return handleLoad(loadingState)
-                case .none: return .none
+                    return .none
+                    
+                case .refresh: 
+                    return handleLoad(loadingState)
+                    
+                case .none:
+                    return .none
                 }
 
             case .error(.retry):
