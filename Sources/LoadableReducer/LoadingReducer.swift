@@ -72,9 +72,10 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
         }
     }
 
+    private let uuid = UUID()
     private let reducer: LR
-    private enum CancelID {
-        case load
+    private enum CancelID: Hashable {
+        case load(UUID)
     }
 
     public var body: some ReducerOf<Self> {
@@ -97,12 +98,7 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
                 return .none
 
             case .loaded(let readyAction):
-                guard case .loaded(let readyState) = state else {
-                    return .none
-                }
-
-                let loadingState = readyState.loadingState
-
+                let loadingState = state.loadingState
                 switch reducer.updateRequest(for: readyAction) {
                 case .reload:
                     state = .loading(loadingState)
@@ -110,7 +106,7 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
                     
                 case .refresh: 
                     return handleLoad(loadingState)
-                    
+
                 case .none:
                     return .none
                 }
@@ -121,9 +117,7 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
                 return handleLoad(loadingState)
             }
         }
-        .ifCaseLet(/State.loaded, action: /Action.loaded) {
-            reducer
-        }
+        .ifCaseLet(/State.loaded, action: /Action.loaded) { reducer }
     }
 
     /// Creates a concrete reducer to handle the lifecycle of the wrapped ``Reducer``.
@@ -134,14 +128,14 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
 
     private func handleLoad(_ loadingState: LR.LoadingState) -> Effect<Action> {
         .concatenate(
-            .cancel(id: CancelID.load),
+            .cancel(id: CancelID.load(uuid)),
             .run { send in
                 let loadedState = try await reducer.load(loadingState)
                 await send(.loading(.onLoaded(.success(loadedState))))
             } catch: { error, send in
                 await send(.loading(.onLoaded(.failure(error))))
             }
-            .cancellable(id: CancelID.load)
+            .cancellable(id: CancelID.load(uuid))
         )
     }
 }
