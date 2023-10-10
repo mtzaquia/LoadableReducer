@@ -132,6 +132,7 @@ public struct LoadingReducer<LR: LoadableReducer>: Reducer {
             .run { send in
                 let loadedState = try await reducer.load(loadingState)
                 await send(.loading(.onLoaded(.success(loadedState))))
+                await reducer.loaded(loadedState, send: .init { send(.loaded($0)) })
             } catch: { error, send in
                 await send(.loading(.onLoaded(.failure(error))))
             }

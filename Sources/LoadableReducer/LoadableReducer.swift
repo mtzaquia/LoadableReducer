@@ -45,8 +45,16 @@ public protocol LoadableReducer: Reducer where State: LoadedState, State.Loading
     /// - Parameter action: The ready action to evaluate.
     /// - Returns: An update request, or `nil` if no update should happen from the action.
     func updateRequest(for action: Action) -> UpdateRequest?
+
+    /// A function that runs when your reducer loads successfully, including refreshes.
+    ///
+    /// - Parameters:
+    ///   - state: The loaded state, which is the loaded State of your reducer.
+    ///   - send: A send closure, if the loading of this feature should trigger an action from the ready state.
+    func loaded(_ state: State, send: Send<Action>) async
 }
 
 public extension LoadableReducer {
     func updateRequest(for action: Action) -> UpdateRequest? { nil }
+    func loaded(_ state: State, send: Send<Action>) async {}
 }
