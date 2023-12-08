@@ -21,6 +21,24 @@
 //
 
 import ComposableArchitecture
-import Foundation
 
-public typealias LoadableStoreOf<LR: LoadableReducer> = StoreOf<LoadingReducer<LR>>
+public extension Store {
+    /// **[LoadableReducer]** A helper function that allows for the initialisation of a ``Store``
+    /// with an ``InitialState``from a ``Loadable`` feature.
+    /// - Parameters:
+    ///   - initialState: The initial state to start the feature in - it will be used to fully load the feature.
+    ///   - reducer: A reducer conforming to ``Loadable`` that powers the business logic of the application.
+    ///   - prepareDependencies: A closure that can be used to override dependencies that will be accessed
+    ///     by the reducer.
+    convenience init<R: Reducer & Loadable, InitialState: Equatable, ReadyState: Equatable>(
+      initialState: @autoclosure () -> InitialState,
+      @ReducerBuilder<State, Action> reducer: () -> R,
+      withDependencies prepareDependencies: ((inout DependencyValues) -> Void)? = nil
+    ) where State == LoadableState<InitialState, ReadyState>, R.State == State, R.Action == Action {
+        self.init(
+            initialState: LoadableState(initial: initialState()),
+            reducer: reducer,
+            withDependencies: prepareDependencies
+        )
+    }
+}

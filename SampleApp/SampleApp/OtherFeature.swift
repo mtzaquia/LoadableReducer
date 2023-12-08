@@ -24,28 +24,25 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct OtherFeature: LoadableReducer {
-    struct State: LoadedState {
-        var loadingState: LoadingState
+struct OtherFeature: Reducer, Loadable {
+    struct InitialState: Equatable {
+        let name: String
+    }
+
+    struct ReadyState: Equatable {
         var greeting: String
     }
 
-    enum Action: Hashable {
+    enum ReadyAction: Hashable {
         case noop
     }
 
     var body: some ReducerOf<Self> {
         EmptyReducer()
     }
-}
 
-extension OtherFeature {
-    struct LoadingState: Equatable {
-        let name: String
-    }
-
-    func load(_ loadingState: LoadingState) async throws -> State {
+    var load: LoadFor<OtherFeature> = { initialState in
         try await Task.sleep(for: .seconds(2))
-        return .init(loadingState: loadingState, greeting: "Hello, \(loadingState.name)")
+        return OtherFeature.ReadyState(greeting: "Hello \(initialState.name)")
     }
 }

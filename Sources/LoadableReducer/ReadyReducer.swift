@@ -19,20 +19,39 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 //
-  
+
 import ComposableArchitecture
-import LoadableReducer
-import SwiftUI
 
-struct OtherFeatureView: View {
-    let store: StoreOf<OtherFeature>
+public struct Ready<
+    R: Reducer,
+    InitialState: Equatable,
+    ReadyState: Equatable,
+    ReadyAction: Equatable
+>: Reducer where
+    R.State == ReadyState,
+    R.Action == ReadyAction
+{
+    public typealias State = LoadableState<InitialState, ReadyState>
+    public typealias Action = LoadableAction<ReadyAction, ReadyState>
 
-    var body: some View {
-        EmptyView()
-//        WithLoadableStore(store) { loadedStore in
-//            WithViewStore(loadedStore, observe: { $0 }) { viewStore in
-//                Text(viewStore.greeting)
-//            }
-//        }
+    let ready: () -> R
+
+    public typealias ReduceObserving = (inout State, Action) -> Effect<Action>
+    let observing: ReduceObserving
+
+    public var body: some ReducerOf<Self> {
+        Scope(state: \.content, action: /Action.self) {
+            EmptyReducer()
+                .ifCaseLet(/Content.ready, action: /Action.ready) {
+                    ready()
+                }
+        }
+
+        Reduce(observing)
+    }
+
+    public init(_ ready: @escaping () -> R, observing: @escaping ReduceObserving = { _, _ in .none }) {
+        self.ready = ready
+        self.observing = observing
     }
 }

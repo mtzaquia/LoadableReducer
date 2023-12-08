@@ -24,63 +24,67 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct MyFeature: LoadableReducer {
-    struct State: LoadedState {
-        var loadingState: LoadingState
-        var isRefreshing: Bool = false
-
-        @PresentationState var other: OtherFeature.LoadableState?
+struct MyFeature: Reducer, Loadable {
+    struct InitialState: Equatable {
+        var url: URL
+        var count = 1
     }
 
-    enum Action {
-        case reload
-        case refresh
+    struct ReadyState: Equatable {
+        var isRefreshing = false
+        var count: Int
+        @PresentationState var other: OtherFeature.State?
+    }
+
+    enum ReadyAction: Equatable {
         case presentOther
 
-        case other(PresentationAction<OtherFeature.LoadableAction>)
+        case reload
+        case refresh
+
+        case other(PresentationAction<OtherFeature.Action>)
     }
 
     var body: some ReducerOf<Self> {
-        Reduce { state, action in
+        Ready {
+            Reduce { state, action in
+                switch action {
+                case .presentOther:
+                    state.other = .init(initial: .init(name: "MZ"))
+                    return .none
+
+                case .reload, .refresh, .other:
+                    return .none
+                }
+            }
+            .ifLet(\.$other, action: /ReadyAction.other) {
+                OtherFeature()
+            }
+        } observing: { state, action in
             switch action {
-            case .refresh:
-                state.isRefreshing = true
-                return .none
+            case .ready(.reload): 
+                state.initial.count = 1
+                return .send(.initial(.reload(discardingContent: true)))
 
-            case .presentOther:
-                state.other = .loading(.init(name: "MZ"))
-                return .none
+            case .ready(.refresh):
+                state.content?.modify(\.ready) {
+                    $0.isRefreshing = true
+                }
+                state.initial.count += 1
+                return .send(.initial(.reload(discardingContent: false)))
 
-            case .reload, .other:
-                return .none
+            default: return .none
             }
         }
-        .ifLet(\.$other, action: /Action.other) {
-            LoadingReducer(reducer: OtherFeature())
-        }
-    }
-}
-
-extension MyFeature {
-    struct LoadingState: Equatable {
-        let url: URL
     }
 
-    func load(_ loadingState: LoadingState) async throws -> State {
+    var load: LoadFor<MyFeature> = { initialState in
         try await Task.sleep(for: .seconds(2))
 
 //        if Bool.random() {
 //            throw URLError(.cancelled)
 //        }
 
-        return .init(loadingState: loadingState)
-    }
-
-    func updateRequest(for action: Action) -> UpdateRequest? {
-        switch action {
-        case .reload: return .reload
-        case .refresh: return .refresh
-        default: return nil
-        }
+        return MyFeature.ReadyState(count: initialState.count)
     }
 }

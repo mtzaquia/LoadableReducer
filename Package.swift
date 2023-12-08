@@ -11,12 +11,12 @@ let package = Package(
     products: [
         .library(
             name: "LoadableReducer",
-            targets: ["LoadableReducer"]),
+            targets: ["LoadableReducer"])
     ],
     dependencies: [
         .package(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
-            .upToNextMajor(from: "1.0.0")
+            exact: "1.5.1"
         ),
     ],
     targets: [
@@ -28,6 +28,8 @@ let package = Package(
                     package: "swift-composable-architecture"
                 )
             ]
-        )
+        ),
+        .testTarget(name: "LoadableReducerTests", dependencies: ["LoadableReducer"])
+
     ]
 )

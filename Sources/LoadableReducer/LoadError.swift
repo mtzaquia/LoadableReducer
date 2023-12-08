@@ -22,15 +22,18 @@
 
 import Foundation
 
-/// An update request object, used to make a decision on whether the feature
-/// should refresh or reload.
-public enum UpdateRequest {
-    /// Trigger a reload using the latest loading state.
-    /// - Important: When reloading, the feature will shift to a loading state.
-    case reload
-    /// Trigger a refresh using the latest loading state.
-    /// - Important: When refreshing, the feature will remain ready and update inline once data is available.
-    case refresh
+/// An error encapsulating the concrete error that ocurred when loading a ``Loadable`` feature.
+public enum LoadError: Error, Hashable {
+    /// The concrete, wrapped error that occurred during loading.
+    case wrapped(Error)
+
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        guard case .wrapped(let lhse) = lhs, case .wrapped(let rhse) = rhs else { return false }
+        return String(reflecting: lhse) == String(reflecting: rhse)
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        guard case .wrapped(let error) = self else { return }
+        hasher.combine(String(reflecting: error))
+    }
 }
-
-

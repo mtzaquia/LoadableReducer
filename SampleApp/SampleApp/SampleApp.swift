@@ -30,8 +30,8 @@ struct SampleApp: App {
         WindowGroup {
             MyFeatureView(
                 store: .init(
-                    initialState: .loading(.init(url: URL(string: "https://gogle.com")!)),
-                    reducer: { LoadingReducer(reducer: MyFeature()) }
+                    initialState: MyFeature.InitialState(url: URL(string: "https://gogle.com")!),
+                    reducer: { MyFeature() }
                 )
             )
         }

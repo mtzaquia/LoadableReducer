@@ -25,14 +25,14 @@ import LoadableReducer
 import SwiftUI
 
 struct MyFeatureView: View {
-    let store: LoadableStoreOf<MyFeature>
+    let store: StoreOf<MyFeature>
 
     var body: some View {
-        WithLoadableStore(store, animation: .default) { loadedStore in
-            WithViewStore(loadedStore, observe: { $0 }) { viewStore in
+        LoadableStore(store) { readyStore in
+            WithViewStore(readyStore, observe: { $0 }) { viewStore in
                 VStack {
                     VStack {
-                        Text("Ready.")
+                        Text("Ready, count: \(viewStore.count)")
 
                         Button {
                             viewStore.send(.reload)
@@ -67,13 +67,13 @@ struct MyFeatureView: View {
                 }
             }
             .sheet(
-                store: loadedStore.scope(
+                store: readyStore.scope(
                     state: \.$other,
                     action: { .other($0) }
                 )
             ) { store in
                 OtherFeatureView(store: store)
             }
-        }
+        } 
     }
 }

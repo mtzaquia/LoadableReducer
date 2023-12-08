@@ -19,20 +19,27 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 //
-  
-import ComposableArchitecture
-import LoadableReducer
-import SwiftUI
 
-struct OtherFeatureView: View {
-    let store: StoreOf<OtherFeature>
+import CasePaths
+import Foundation
 
-    var body: some View {
-        EmptyView()
-//        WithLoadableStore(store) { loadedStore in
-//            WithViewStore(loadedStore, observe: { $0 }) { viewStore in
-//                Text(viewStore.greeting)
-//            }
-//        }
-    }
+/// An action that encapulates an initial state and a ready state, as well as their actions.
+@CasePathable public enum LoadableAction<ReadyAction, ReadyState> {
+    /// The actions for whenever a feature is about to load or reload.
+    case initial(InitialAction<ReadyState>)
+    /// The actions for whenever a feature has already loaded and is ready.
+    case ready(ReadyAction)
 }
+
+/// The set of actions available when the feature is not ready.
+@CasePathable public enum InitialAction<ReadyState> {
+    case load
+    case reload(discardingContent: Bool)
+    case didLoad(Result<ReadyState, LoadError>)
+}
+
+extension LoadableAction: Equatable where ReadyAction: Equatable, ReadyState: Equatable {}
+extension InitialAction: Equatable where ReadyState: Equatable {}
+
+extension LoadableAction: Hashable where ReadyAction: Hashable, ReadyState: Hashable {}
+extension InitialAction: Hashable where ReadyState: Hashable {}

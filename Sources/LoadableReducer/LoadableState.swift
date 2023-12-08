@@ -20,10 +20,29 @@
 //  SOFTWARE.
 //
 
+import CasePaths
 import Foundation
 
-public protocol LoadedState: Equatable {
-    associatedtype LoadingState: Equatable
-    var loadingState: LoadingState { get set }
+/// A state that encapulates its initial data and the result of a load, being a ready state or an error.
+public struct LoadableState<InitialState, ReadyState> {
+    public var initial: InitialState
+
+    var isLoading: Bool = false
+
+    public var content: Content<ReadyState>?
+
+    /// Creates a new ``LoadableState`` with a given ``InitialState``.
+    /// - Parameter initial: The initial data, available immediately for use and loading of a ``ReadyState``.
+    public init(initial: InitialState) {
+        self.initial = initial
+    }
 }
 
+/// The loaded content of a feature, either the ready state or an error that ocurred during load.
+@CasePathable public enum Content<ReadyState> {
+    case ready(ReadyState)
+    case error(LoadError)
+}
+
+extension LoadableState: Equatable where InitialState: Equatable, ReadyState: Equatable {}
+extension Content: Equatable where ReadyState: Equatable {}
