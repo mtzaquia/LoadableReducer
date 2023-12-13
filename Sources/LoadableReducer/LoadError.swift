@@ -23,9 +23,17 @@
 import Foundation
 
 /// An error encapsulating the concrete error that ocurred when loading a ``Loadable`` feature.
-public enum LoadError: Error, Hashable {
+public enum LoadError: Error, LocalizedError, Hashable {
     /// The concrete, wrapped error that occurred during loading.
     case wrapped(Error)
+
+    public var errorDescription: String? {
+        guard case .wrapped(let error) = self else {
+            return nil
+        }
+        
+        return error.localizedDescription
+    }
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         guard case .wrapped(let lhse) = lhs, case .wrapped(let rhse) = rhs else { return false }

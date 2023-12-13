@@ -28,52 +28,53 @@ struct MyFeatureView: View {
     let store: StoreOf<MyFeature>
 
     var body: some View {
-        LoadableStore(store) { readyStore in
-            WithViewStore(readyStore, observe: { $0 }) { viewStore in
-                VStack {
-                    VStack {
-                        Text("Ready, count: \(viewStore.count)")
-
-                        Button {
-                            viewStore.send(.reload)
-                        } label: {
-                            Text("Reload").bold()
-                        }
-                        .buttonStyle(.borderedProminent)
-
-                        Button {
-                            viewStore.send(.refresh)
-                        } label: {
-                            HStack(spacing: 8) {
-                                Text("Refresh").bold()
-                                if viewStore.isRefreshing {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
-                                }
-                            }
-                            .frame(minHeight: 20)
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-
-                    Divider()
-
-                    Button {
-                        viewStore.send(.presentOther)
-                    } label: {
-                        Text("Present other feature")
-                    }
-                }
-            }
-            .sheet(
-                store: readyStore.scope(
-                    state: \.$other,
-                    action: { .other($0) }
-                )
-            ) { store in
-                OtherFeatureView(store: store)
-            }
-        } 
+        EmptyView()
+//        LoadableStore(store) { readyStore in
+//            WithViewStore(readyStore, observe: { $0 }) { viewStore in
+//                VStack {
+//                    VStack {
+//                        Text("Ready, count: \(viewStore.count)")
+//
+//                        Button {
+//                            viewStore.send(.reload)
+//                        } label: {
+//                            Text("Reload").bold()
+//                        }
+//                        .buttonStyle(.borderedProminent)
+//
+//                        Button {
+//                            viewStore.send(.refresh)
+//                        } label: {
+//                            HStack(spacing: 8) {
+//                                Text("Refresh").bold()
+//                                if viewStore.isRefreshing {
+//                                    ProgressView()
+//                                        .progressViewStyle(.circular)
+//                                        .tint(.white)
+//                                }
+//                            }
+//                            .frame(minHeight: 20)
+//                        }
+//                        .buttonStyle(.borderedProminent)
+//                    }
+//
+//                    Divider()
+//
+//                    Button {
+//                        viewStore.send(.presentOther)
+//                    } label: {
+//                        Text("Present other feature")
+//                    }
+//                }
+//            }
+//            .sheet(
+//                store: readyStore.scope(
+//                    state: \.$other,
+//                    action: { .other($0) }
+//                )
+//            ) { store in
+//                OtherFeatureView(store: store)
+//            }
+//        } 
     }
 }

@@ -30,23 +30,23 @@ struct MyFeature: Reducer, Loadable {
         var count = 1
     }
 
-    struct ReadyState: Equatable {
-        var isRefreshing = false
-        var count: Int
-        @PresentationState var other: OtherFeature.State?
-    }
+    struct Ready: Reducer {
+        struct State: Equatable {
+            var isRefreshing = false
+            var count: Int
+            @PresentationState var other: OtherFeature.State?
+        }
 
-    enum ReadyAction: Equatable {
-        case presentOther
+        enum Action: Equatable {
+            case presentOther
 
-        case reload
-        case refresh
+            case reload
+            case refresh
 
-        case other(PresentationAction<OtherFeature.Action>)
-    }
+            case other(PresentationAction<OtherFeature.Action>)
+        }
 
-    var body: some ReducerOf<Self> {
-        Ready {
+        var body: some ReducerOf<Self> {
             Reduce { state, action in
                 switch action {
                 case .presentOther:
@@ -57,12 +57,16 @@ struct MyFeature: Reducer, Loadable {
                     return .none
                 }
             }
-            .ifLet(\.$other, action: /ReadyAction.other) {
+            .ifLet(\.$other, action: /Action.other) {
                 OtherFeature()
             }
-        } observing: { state, action in
+        }
+    }
+
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
             switch action {
-            case .ready(.reload): 
+            case .ready(.reload):
                 state.initial.count = 1
                 return .send(.initial(.reload(discardingContent: true)))
 
@@ -76,6 +80,9 @@ struct MyFeature: Reducer, Loadable {
             default: return .none
             }
         }
+//        .ifReady {
+//           Ready()
+//        }
     }
 
     var load: LoadFor<MyFeature> = { initialState in
@@ -85,6 +92,6 @@ struct MyFeature: Reducer, Loadable {
 //            throw URLError(.cancelled)
 //        }
 
-        return MyFeature.ReadyState(count: initialState.count)
+        return MyFeature.Ready.State(count: initialState.count)
     }
 }

@@ -1,69 +1,69 @@
+////
+////  Copyright (c) 2023 @mtzaquia
+////
+////  Permission is hereby granted, free of charge, to any person obtaining a copy
+////  of this software and associated documentation files (the "Software"), to deal
+////  in the Software without restriction, including without limitation the rights
+////  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+////  copies of the Software, and to permit persons to whom the Software is
+////  furnished to do so, subject to the following conditions:
+////
+////  The above copyright notice and this permission notice shall be included in all
+////  copies or substantial portions of the Software.
+////
+////  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+////  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+////  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+////  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+////  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+////  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+////  SOFTWARE.
+////
 //
-//  Copyright (c) 2023 @mtzaquia
+//import ComposableArchitecture
 //
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
+//struct _LoadingReducer<L: Loadable>: Reducer {
+//    typealias State = LoadableState<L>
+//    typealias Action = LoadableAction<L.Ready>
 //
-//  The above copyright notice and this permission notice shall be included in all
-//  copies or substantial portions of the Software.
+//    var load: LoadFor<L>
 //
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//  SOFTWARE.
+//    var body: some ReducerOf<Self> {
+//        Reduce { state, action in
+//            switch action {
+//            case .initial(.load):
+//                state.isLoading = true
+//                return .run { [initial = state.initial] send in
+//                    try await send(.initial(.didLoad(.success(load(initial)))))
+//                } catch: { error, send in
+//                    await send(.initial(.didLoad(.failure(.wrapped(error)))))
+//                }
 //
-
-import ComposableArchitecture
-
-struct _LoadingReducer<InitialState: Equatable, ReadyState: Equatable, ReadyAction: Equatable>: Reducer {
-    typealias State = LoadableState<InitialState, ReadyState>
-    typealias Action = LoadableAction<ReadyAction, ReadyState>
-
-    var load: (InitialState) async throws -> ReadyState
-
-    var body: some ReducerOf<Self> {
-        Reduce { state, action in
-            switch action {
-            case .initial(.load):
-                state.isLoading = true
-                return .run { [initial = state.initial] send in
-                    try await send(.initial(.didLoad(.success(load(initial)))))
-                } catch: { error, send in
-                    await send(.initial(.didLoad(.failure(.wrapped(error)))))
-                }
-
-            case .initial(.reload(let discardingContent)):
-                state.isLoading = true
-                if discardingContent {
-                    state.content = nil
-                }
-
-                return .run { [initial = state.initial] send in
-                    try await send(.initial(.didLoad(.success(load(initial)))))
-                } catch: { error, send in
-                    await send(.initial(.didLoad(.failure(.wrapped(error)))))
-                }
-
-            case .initial(.didLoad(.success(let loadedState))):
-                state.isLoading = false
-                state.content = .ready(loadedState)
-                return .none
-
-            case .initial(.didLoad(.failure(let error))):
-                state.isLoading = false
-                state.content = .error(error)
-                return .none
-
-            case .ready:
-                return .none
-            }
-        }
-    }
-}
+//            case .initial(.reload(let discardingContent)):
+//                state.isLoading = true
+//                if discardingContent {
+//                    state.content = nil
+//                }
+//
+//                return .run { [initial = state.initial] send in
+//                    try await send(.initial(.didLoad(.success(load(initial)))))
+//                } catch: { error, send in
+//                    await send(.initial(.didLoad(.failure(.wrapped(error)))))
+//                }
+//
+//            case .initial(.didLoad(.success(let loadedState))):
+//                state.isLoading = false
+//                state.content = .ready(loadedState)
+//                return .none
+//
+//            case .initial(.didLoad(.failure(let error))):
+//                state.isLoading = false
+//                state.content = .error(error)
+//                return .none
+//
+//            case .ready:
+//                return .none
+//            }
+//        }
+//    }
+//}

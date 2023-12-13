@@ -29,9 +29,13 @@ struct OtherFeatureView: View {
 
     var body: some View {
         EmptyView()
-//        WithLoadableStore(store) { loadedStore in
-//            WithViewStore(loadedStore, observe: { $0 }) { viewStore in
+//        LoadableStore(store) { readyStore in
+//            WithViewStore(readyStore, observe: { $0 }) { viewStore in
 //                Text(viewStore.greeting)
+//            }
+//        } initialContent: { initialStore in
+//            WithViewStore(initialStore, observe: { $0 }) { viewStore in
+//                Text("\(viewStore.state.name)...")
 //            }
 //        }
     }

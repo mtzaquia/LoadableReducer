@@ -28,108 +28,125 @@ struct Nested: Reducer, Loadable {
         .init(carried: $0.carried)
     }
 
-    struct InitialState: Equatable {
+    struct State: LoadableState, Equatable {
+        var isLoading: Bool = false
+        var result: Result<Ready.State, LoadError>? = nil
         var carried: Int
     }
 
-    struct ReadyState: Equatable {
-        var carried: Int
-        @PresentationState var nested: Nested.State?
-    }
+    enum Action: LoadableAction, Equatable {
+        case load(fresh: Bool)
+        case didLoad(Result<Ready.State, LoadError>)
 
-    enum ReadyAction: Equatable {
-        case present
-
-        case nested(PresentationAction<Nested.Action>)
+        case ready(Ready.Action)
     }
 
     var body: some ReducerOf<Self> {
-        Ready {
+//        LoadingReducer()
+        EmptyReducer()
+            .ifReady {
+                Ready()
+            }
+    }
+
+    struct Ready: Reducer {
+        struct State: Equatable {
+            var carried: Int
+            @PresentationState var nested: Nested.State?
+        }
+
+        enum Action: Equatable {
+            case present
+
+            case nested(PresentationAction<Nested.Action>)
+        }
+
+        var body: some ReducerOf<Self> {
             Reduce { state, action in
                 switch action {
                 case .present:
-                    state.nested = .init(initial: .init(carried: 2))
+                    state.nested = .init(carried: 2)
                     return .none
 
                 case .nested:
                     return .none
                 }
             }
-            .ifLet(\.$nested, action: /ReadyAction.nested) {
+            .ifLet(\.$nested, action: /Action.nested) {
                 Nested()
             }
         }
     }
 }
 
-struct Sum: Reducer, Loadable {
-    struct InitialState: Equatable {
-        var var1: Int
-        var var2: Int
-    }
-
-    struct ReadyState: Equatable {
-        var sum: Int
-
-        init(sum: Int) {
-            self.sum = sum
-        }
-    }
-
-    enum ReadyAction: Equatable {
-        case happy
-    }
-
-    var body: some ReducerOf<Self> {
-        Ready {
-            Reduce { state, action in
-                switch action {
-                case .happy:
-                    return .none
-                }
-            }
-        } observing: { state, action in
-            switch action {
-            case .initial(.didLoad(.success)):
-                return .send(.ready(.happy))
-
-            case .initial, .ready:
-                return .none
-            }
-        }
-    }
-
-    var load: LoadFor<Self>
-}
-
-struct RootFeature: Reducer {
-    struct State: Equatable {
-        @PresentationState var sum: Sum.State?
-    }
-
-    enum Action: Equatable {
-        case present
-
-        case sum(PresentationAction<Sum.Action>)
-    }
-
-    var body: some ReducerOf<Self> {
-        Reduce { state, action in
-            switch action {
-            case .present:
-                state.sum = Sum.State(initial: .init(var1: 2, var2: 2))
-                return .none
-
-            case .sum(.presented(.ready(.happy))):
-                // YAY
-                return .none
-
-            case .sum:
-                return .none
-            }
-        }
-        .ifLet(\.$sum, action: /Action.sum) {
-            Sum(load: { .init(sum: $0.var1 + $0.var2) })
-        }
-    }
-}
+//struct Sum: Reducer, Loadable {
+//    struct InitialState: Equatable {
+//        var var1: Int
+//        var var2: Int
+//    }
+//
+//    struct ReadyState: Equatable {
+//        var sum: Int
+//
+//        init(sum: Int) {
+//            self.sum = sum
+//        }
+//    }
+//
+//    enum ReadyAction: Equatable {
+//        case happy
+//    }
+//
+//    var body: some ReducerOf<Self> {
+//        Ready {
+//            Reduce { state, action in
+//                switch action {
+//                case .happy:
+//                    return .none
+//                }
+//            }
+//        } observing: { state, action in
+//            switch action {
+//            case .initial(.didLoad(.success)):
+//                return .send(.ready(.happy))
+//
+//            case .initial, .ready:
+//                return .none
+//            }
+//        }
+//    }
+//
+//    var load: LoadFor<Self>
+//}
+//
+//struct RootFeature: Reducer {
+//    struct State: Equatable {
+//        @PresentationState var sum: Sum.State?
+//    }
+//
+//    enum Action: Equatable {
+//        case present
+//
+//        case sum(PresentationAction<Sum.Action>)
+//    }
+//
+//    var body: some ReducerOf<Self> {
+//        Reduce { state, action in
+//            switch action {
+//            case .present:
+//                state.sum = Sum.State(initial: .init(var1: 2, var2: 2))
+//                return .none
+//
+//            case .sum(.presented(.ready(.happy))):
+//                // YAY
+//                return .none
+//
+//            case .sum:
+//                return .none
+//            }
+//        }
+//        .ifLet(\.$sum, action: /Action.sum) {
+//            Sum(load: { .init(sum: $0.var1 + $0.var2) })
+//        }
+//    }
+//}

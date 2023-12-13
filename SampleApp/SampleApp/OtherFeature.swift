@@ -24,17 +24,23 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct OtherFeature: Reducer, Loadable {
+struct OtherFeature: Reducer, Loadable {    
     struct InitialState: Equatable {
         let name: String
     }
 
-    struct ReadyState: Equatable {
-        var greeting: String
-    }
+    struct Ready: Reducer {
+        struct State: Equatable {
+            var greeting: String
+        }
 
-    enum ReadyAction: Hashable {
-        case noop
+        enum Action: Hashable {
+            case noop
+        }
+
+        var body: some ReducerOf<Self> {
+            EmptyReducer()
+        }
     }
 
     var body: some ReducerOf<Self> {
@@ -43,6 +49,6 @@ struct OtherFeature: Reducer, Loadable {
 
     var load: LoadFor<OtherFeature> = { initialState in
         try await Task.sleep(for: .seconds(2))
-        return OtherFeature.ReadyState(greeting: "Hello \(initialState.name)")
+        return OtherFeature.Ready.State(greeting: "Hello \(initialState.name)")
     }
 }
