@@ -24,15 +24,20 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
+@Loadable
 struct MyFeature: Reducer, Loadable {
-    struct InitialState: Equatable {
+    struct State: Equatable {
         var url: URL
         var count = 1
     }
 
+    enum Action {
+    }
+
     struct Ready: Reducer {
-        struct State: Equatable {
-            var isRefreshing = false
+        struct State: Equatable, LoadingObserving {
+            var isLoading: Bool = false
+
             var count: Int
             @PresentationState var other: OtherFeature.State?
         }
@@ -50,7 +55,7 @@ struct MyFeature: Reducer, Loadable {
             Reduce { state, action in
                 switch action {
                 case .presentOther:
-                    state.other = .init(initial: .init(name: "MZ"))
+                    state.other = .init(name: "MZ")
                     return .none
 
                 case .reload, .refresh, .other:
@@ -64,25 +69,23 @@ struct MyFeature: Reducer, Loadable {
     }
 
     var body: some ReducerOf<Self> {
+        LoadingReducer {
+            Ready()
+        }
+
         Reduce { state, action in
             switch action {
             case .ready(.reload):
-                state.initial.count = 1
-                return .send(.initial(.reload(discardingContent: true)))
+                state.count = 1
+                return .send(.load(fresh: true))
 
             case .ready(.refresh):
-                state.content?.modify(\.ready) {
-                    $0.isRefreshing = true
-                }
-                state.initial.count += 1
-                return .send(.initial(.reload(discardingContent: false)))
+                state.count += 1
+                return .send(.load(fresh: false))
 
             default: return .none
             }
         }
-//        .ifReady {
-//           Ready()
-//        }
     }
 
     var load: LoadFor<MyFeature> = { initialState in

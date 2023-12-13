@@ -85,8 +85,11 @@ public struct LoadingReducer<
                 state.isLoading = true
                 if shouldLoadFresh {
                     state.result = nil
-                } else {
-                    // TODO: set isLoading if LoadingObserving
+                } else if var ready = try? state.result?.get() as? LoadingObserving {
+                    ready.isLoading = true
+                    if let ready = ready as? Ready.State {
+                        state.result = .success(ready)
+                    }
                 }
 
                 guard let load = _$load as? Load<State, State.ReadyState> else {
@@ -101,7 +104,12 @@ public struct LoadingReducer<
             } else if let result = AnyCasePath(Action.didLoad).extract(from: action) {
                 state.isLoading = false
                 state.result = result
-                // TODO: set isLoading if LoadingObserving
+                if var ready = try? state.result?.get() as? LoadingObserving {
+                    ready.isLoading = false
+                    if let ready = ready as? Ready.State {
+                        state.result = .success(ready)
+                    }
+                }
                 return .none
             } else {
                 return .none
@@ -126,61 +134,93 @@ public struct LoadingReducer<
 
 // ----------------------------------------------
 
-//public extension Reducer where State: LoadableState, Action: LoadableAction {
-//    func ifReady<R: Reducer>(
-//        @ReducerBuilder<R.State, R.Action> _ builder: () -> R
-//    ) -> _IfLetReducer<Self, Scope<Result<R.State, LoadError>, Action.ReadyAction, R>>
-//    where State.ReadyState == R.State, Action.ReadyAction == R.Action {
-//        self
-//            .ifLet(\.result, action: /Action.ready) {
-//                Scope(
-//                    state: AnyCasePath(Result<R.State, LoadError>.success),
-//                    action: AnyCasePath(
-//                        embed: { $0 },
-//                        extract: { $0 }
-//                    ),
-//                    child: builder
-//                )
-//            }
-//    }
-//}
-
-// ----------------------------------------------
-
-struct Feature: Reducer, Loadable {
-    struct State: LoadableState {
-        var isLoading: Bool
-        var result: Result<Ready.State, LoadError>?
+public struct GenericLoadingView: View {
+    public var body: some View {
+        ProgressView()
+            .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    enum Action: LoadableAction {
-        case load(fresh: Bool)
-        case didLoad(Result<Ready.State, LoadError>)
+    public init() {}
+}
 
-        case ready(Ready.Action)
-    }
+public struct GenericErrorView<Action: LoadableAction>: View {
+    let store: Store<LoadError, Action>
 
-    var load: LoadFor<Self>
-    var body: some ReducerOf<Self> {
-        LoadingReducer {
-            Ready()
+    public var body: some View {
+        WithViewStore(store, observe: { $0 }) { viewStore in
+            VStack {
+                Text(viewStore.errorDescription ?? "Unknown error")
+                Button("Retry") { viewStore.send(.load(fresh: true)) }
+            }
         }
+    }
+
+    public init(store: Store<LoadError, Action>) {
+        self.store = store
     }
 }
 
-extension Feature {
-    struct Ready: Reducer {
-        struct State {
+public struct LoadableStore<State: LoadableState, Action: LoadableAction, R: View, E: View, L: View>: View {
+    let store: Store<State, Action>
 
-        }
+    @ViewBuilder let readyView: (Store<State.ReadyState, Action.ReadyAction>) -> R
+    @ViewBuilder let errorView: (Store<LoadError, Action>) -> E
+    @ViewBuilder let loadingView: () -> L
 
-        enum Action {
-
-        }
-
-        var body: some ReducerOf<Self> {
-            EmptyReducer()
+    public var body: some View {
+        IfLetStore(store.scope(state: \.result, action: { $0 })) { store in
+            SwitchStore(store) { initialState in
+                switch initialState {
+                case .success:
+                    CaseLet(
+                        successState,
+                        action: Action.ready,
+                        then: readyView
+                    )
+                case .failure:
+                    CaseLet(
+                        failureState,
+                        action: { $0 },
+                        then: errorView
+                    )
+                }
+            }
+        } else: {
+            loadingView()
+                .onAppear { store.send(.load(fresh: true)) }
         }
     }
-}
 
+    public init(
+        _ store: Store<State, Action>,
+        readyView: @escaping (Store<State.ReadyState, Action.ReadyAction>) -> R
+    ) where E == GenericErrorView<Action>, L == GenericLoadingView {
+        self.store = store
+        self.readyView = readyView
+        self.errorView = GenericErrorView.init
+        self.loadingView = GenericLoadingView.init
+    }
+
+    public init(
+        _ store: Store<State, Action>,
+        readyView: @escaping (Store<State.ReadyState, Action.ReadyAction>) -> R,
+        errorView: @escaping (Store<LoadError, Action>) -> E = GenericErrorView<Action>.init,
+        loadingView: @escaping () -> L = GenericLoadingView.init
+    ) {
+        self.store = store
+        self.readyView = readyView
+        self.errorView = errorView
+        self.loadingView = loadingView
+    }
+
+    private func successState(_ state: Result<State.ReadyState, LoadError>) -> State.ReadyState? {
+        guard case .success(let success) = state else { return nil }
+        return success
+    }
+
+    private func failureState(_ state: Result<State.ReadyState, LoadError>) -> LoadError? {
+        guard case .failure(let error) = state else { return nil }
+        return error
+    }
+}

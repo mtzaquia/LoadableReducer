@@ -24,9 +24,14 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-struct OtherFeature: Reducer, Loadable {    
-    struct InitialState: Equatable {
+@Loadable
+struct OtherFeature: Reducer {
+    struct State: Equatable {
         let name: String
+    }
+
+    enum Action: Equatable {
+
     }
 
     struct Ready: Reducer {
