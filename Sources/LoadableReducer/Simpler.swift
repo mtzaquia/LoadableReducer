@@ -36,7 +36,9 @@ public protocol Loadable: Reducer
     var load: LoadFor<Self> { get }
 }
 
-
+public protocol LoadingObserving {
+    var isLoading: Bool { get set }
+}
 
 // ------------------------------------------------
 
@@ -64,58 +66,84 @@ public extension Loadable {
     }
 }
 
-public struct LoadingReducer<State: LoadableState, Action: LoadableAction>: Reducer where State.ReadyState == Action.ReadyState {
+public struct LoadingReducer<
+    State: LoadableState,
+    Action: LoadableAction,
+    Ready: Reducer
+>: Reducer where
+    State.ReadyState == Action.ReadyState,
+    State.ReadyState == Ready.State,
+    Action.ReadyAction == Ready.Action
+{
     @Dependency(\._$load) public var _$load
 
-    @inlinable
-    public func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        if let shouldLoadFresh = AnyCasePath(Action.load).extract(from: action) {
-            state.isLoading = true
-            if shouldLoadFresh {
-                state.result = nil
-            }
+    @ReducerBuilder<Ready.State, Ready.Action> public var ready: () -> Ready
 
-            guard let load = _$load as? Load<State, State.ReadyState> else {
+    public var body: some Reducer<State, Action> {
+        Reduce { state, action in
+            if let shouldLoadFresh = AnyCasePath(Action.load).extract(from: action) {
+                state.isLoading = true
+                if shouldLoadFresh {
+                    state.result = nil
+                } else {
+                    // TODO: set isLoading if LoadingObserving
+                }
+
+                guard let load = _$load as? Load<State, State.ReadyState> else {
+                    return .none
+                }
+
+                return .run { [state] send in
+                    try await send(.didLoad(.success(load(state))))
+                } catch: { error, send in
+                    await send(.didLoad(.failure(.wrapped(error))))
+                }
+            } else if let result = AnyCasePath(Action.didLoad).extract(from: action) {
+                state.isLoading = false
+                state.result = result
+                // TODO: set isLoading if LoadingObserving
+                return .none
+            } else {
                 return .none
             }
-
-            return .run { [state] send in
-                try await send(.didLoad(.success(load(state))))
-            } catch: { error, send in
-                await send(.didLoad(.failure(.wrapped(error))))
-            }
-        } else if let result = AnyCasePath(Action.didLoad).extract(from: action) {
-            state.isLoading = false
-            state.result = result
-            return .none
-        } else {
-            return .none
+        }
+        .ifLet(\.result, action: /Action.ready) {
+            Scope(
+                state: AnyCasePath(Result<State.ReadyState, LoadError>.success),
+                action: AnyCasePath(
+                    embed: { $0 },
+                    extract: { $0 }
+                ),
+                child: ready
+            )
         }
     }
 
-    public init() {}
+    public init(@ReducerBuilder<Ready.State, Ready.Action> ready: @escaping () -> Ready) {
+        self.ready = ready
+    }
 }
 
 // ----------------------------------------------
 
-public extension Reducer where State: LoadableState, Action: LoadableAction {
-    func ifReady<R: Reducer>(
-        @ReducerBuilder<R.State, R.Action> _ builder: () -> R
-    ) -> _IfLetReducer<Self, Scope<Result<R.State, LoadError>, Action.ReadyAction, R>>
-    where State.ReadyState == R.State, Action.ReadyAction == R.Action {
-        self
-            .ifLet(\.result, action: /Action.ready) {
-                Scope(
-                    state: AnyCasePath(Result<R.State,LoadError>.success),
-                    action: AnyCasePath(
-                        embed: { $0 },
-                        extract: { $0 }
-                    ),
-                    child: builder
-                )
-            }
-    }
-}
+//public extension Reducer where State: LoadableState, Action: LoadableAction {
+//    func ifReady<R: Reducer>(
+//        @ReducerBuilder<R.State, R.Action> _ builder: () -> R
+//    ) -> _IfLetReducer<Self, Scope<Result<R.State, LoadError>, Action.ReadyAction, R>>
+//    where State.ReadyState == R.State, Action.ReadyAction == R.Action {
+//        self
+//            .ifLet(\.result, action: /Action.ready) {
+//                Scope(
+//                    state: AnyCasePath(Result<R.State, LoadError>.success),
+//                    action: AnyCasePath(
+//                        embed: { $0 },
+//                        extract: { $0 }
+//                    ),
+//                    child: builder
+//                )
+//            }
+//    }
+//}
 
 // ----------------------------------------------
 
@@ -134,10 +162,9 @@ struct Feature: Reducer, Loadable {
 
     var load: LoadFor<Self>
     var body: some ReducerOf<Self> {
-        LoadingReducer()
-            .ifReady { () -> Ready in
-                Ready()
-            }
+        LoadingReducer {
+            Ready()
+        }
     }
 }
 
