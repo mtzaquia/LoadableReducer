@@ -28,7 +28,7 @@ public struct LoadableStore<State: LoadableState, Action: LoadableAction, R: Vie
 
     @ViewBuilder let readyView: (Store<State.ReadyState, Action.ReadyAction>) -> R
     @ViewBuilder let errorView: (Store<LoadError, Action>) -> E
-    @ViewBuilder let loadingView: () -> L
+    @ViewBuilder let loadingView: (Store<State, Action>) -> L
 
     public var body: some View {
         IfLetStore(store.scope(state: \.result, action: { $0 })) { store in
@@ -49,7 +49,7 @@ public struct LoadableStore<State: LoadableState, Action: LoadableAction, R: Vie
                 }
             }
         } else: {
-            loadingView()
+            loadingView(store)
                 .onAppear { store.send(.load(fresh: true)) }
         }
     }
@@ -57,7 +57,7 @@ public struct LoadableStore<State: LoadableState, Action: LoadableAction, R: Vie
     public init(
         _ store: Store<State, Action>,
         readyView: @escaping (Store<State.ReadyState, Action.ReadyAction>) -> R
-    ) where E == GenericErrorView<Action>, L == GenericLoadingView {
+    ) where E == GenericErrorView<Action>, L == GenericLoadingView<State, Action> {
         self.store = store
         self.readyView = readyView
         self.errorView = GenericErrorView.init
@@ -67,8 +67,19 @@ public struct LoadableStore<State: LoadableState, Action: LoadableAction, R: Vie
     public init(
         _ store: Store<State, Action>,
         readyView: @escaping (Store<State.ReadyState, Action.ReadyAction>) -> R,
+        loadingView: @escaping (Store<State, Action>) -> L
+    ) where E == GenericErrorView<Action> {
+        self.store = store
+        self.readyView = readyView
+        self.errorView = GenericErrorView.init
+        self.loadingView = loadingView
+    }
+
+    public init(
+        _ store: Store<State, Action>,
+        readyView: @escaping (Store<State.ReadyState, Action.ReadyAction>) -> R,
         errorView: @escaping (Store<LoadError, Action>) -> E = GenericErrorView<Action>.init,
-        loadingView: @escaping () -> L = GenericLoadingView.init
+        loadingView: @escaping (Store<State, Action>) -> L = GenericLoadingView<State, Action>.init
     ) {
         self.store = store
         self.readyView = readyView

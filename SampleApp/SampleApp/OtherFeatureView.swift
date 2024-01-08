@@ -28,15 +28,14 @@ struct OtherFeatureView: View {
     let store: StoreOf<OtherFeature>
 
     var body: some View {
-        EmptyView()
-//        LoadableStore(store) { readyStore in
-//            WithViewStore(readyStore, observe: { $0 }) { viewStore in
-//                Text(viewStore.greeting)
-//            }
-//        } initialContent: { initialStore in
-//            WithViewStore(initialStore, observe: { $0 }) { viewStore in
-//                Text("\(viewStore.state.name)...")
-//            }
-//        }
+        LoadableStore(store) { readyStore in
+            WithViewStore(readyStore, observe: { $0 }) { viewStore in
+                Text(viewStore.greeting)
+            }
+        } loadingView: { loadingStore in
+            WithViewStore(loadingStore, observe: { $0 }) { viewStore in
+                Text("\(viewStore.name)...")
+            }
+        }
     }
 }

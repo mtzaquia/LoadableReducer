@@ -54,7 +54,9 @@ struct OtherFeature: Loadable {
     }
 
     var body: some ReducerOf<Self> {
-        EmptyReducer()
+        LoadingReducer {
+            Ready()
+        }
     }
 
     var load: LoadFor<OtherFeature> = { initialState in

@@ -2,10 +2,13 @@
 //  
 //  Created by Mauricio Zaquia on 08/01/2024.
 //  
-  
+
+import ComposableArchitecture
 import SwiftUI
 
-public struct GenericLoadingView: View {
+public struct GenericLoadingView<State, Action>: View {
+    let store: Store<State, Action>
+
     public var body: some View {
         if #available(macOS 11, *) {
             ProgressView()
@@ -16,5 +19,7 @@ public struct GenericLoadingView: View {
         }
     }
 
-    public init() {}
+    public init(store: Store<State, Action>) {
+        self.store = store
+    }
 }
