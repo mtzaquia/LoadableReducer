@@ -21,44 +21,19 @@
 //
 
 import ComposableArchitecture
-import LoadableReducer
-import SwiftUI
 
-@Reducer
-struct OtherFeature: Loadable {
-    struct State: Equatable, LoadableState {
-        let name: String
+public typealias Load<I, R> = (I) async throws -> R
+public typealias LoadFor<L: Loadable> = (L.State) async throws -> L.Ready.State
 
-        var isLoading: Bool = false
-        var result: Result<Ready.State, LoadError>? = nil
-    }
+public protocol Loadable: Reducer
+    where State: LoadableState, Action: LoadableAction,
+          State.ReadyState == Ready.State, Action.ReadyState == Ready.State, Action.ReadyAction == Ready.Action {
+    
+    associatedtype Ready: Reducer
 
-    enum Action: Equatable, LoadableAction {
-        case load(fresh: Bool)
-        case didLoad(Result<Ready.State, LoadError>)
-        case ready(Ready.Action)
-    }
+    var load: LoadFor<Self> { get }
+}
 
-    struct Ready: Reducer {
-        struct State: Equatable {
-            var greeting: String
-        }
-
-        enum Action: Hashable {
-            case noop
-        }
-
-        var body: some ReducerOf<Self> {
-            EmptyReducer()
-        }
-    }
-
-    var body: some ReducerOf<Self> {
-        EmptyReducer()
-    }
-
-    var load: LoadFor<OtherFeature> = { initialState in
-        try await Task.sleep(for: .seconds(2))
-        return OtherFeature.Ready.State(greeting: "Hello \(initialState.name)")
-    }
+public protocol LoadingObserving {
+    var isLoading: Bool { get set }
 }

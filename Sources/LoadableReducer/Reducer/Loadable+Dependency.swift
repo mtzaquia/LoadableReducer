@@ -20,45 +20,15 @@
 //  SOFTWARE.
 //
 
-import ComposableArchitecture
-import LoadableReducer
-import SwiftUI
+import Dependencies
 
-@Reducer
-struct OtherFeature: Loadable {
-    struct State: Equatable, LoadableState {
-        let name: String
+enum LoadDependencyKey: DependencyKey {
+    static var liveValue: Any?
+}
 
-        var isLoading: Bool = false
-        var result: Result<Ready.State, LoadError>? = nil
-    }
-
-    enum Action: Equatable, LoadableAction {
-        case load(fresh: Bool)
-        case didLoad(Result<Ready.State, LoadError>)
-        case ready(Ready.Action)
-    }
-
-    struct Ready: Reducer {
-        struct State: Equatable {
-            var greeting: String
-        }
-
-        enum Action: Hashable {
-            case noop
-        }
-
-        var body: some ReducerOf<Self> {
-            EmptyReducer()
-        }
-    }
-
-    var body: some ReducerOf<Self> {
-        EmptyReducer()
-    }
-
-    var load: LoadFor<OtherFeature> = { initialState in
-        try await Task.sleep(for: .seconds(2))
-        return OtherFeature.Ready.State(greeting: "Hello \(initialState.name)")
+extension DependencyValues {
+    var _$load: Any? {
+        get { self[LoadDependencyKey.self] }
+        set { self[LoadDependencyKey.self] = newValue }
     }
 }

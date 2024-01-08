@@ -21,44 +21,15 @@
 //
 
 import ComposableArchitecture
-import LoadableReducer
-import SwiftUI
+import Foundation
 
-@Reducer
-struct OtherFeature: Loadable {
-    struct State: Equatable, LoadableState {
-        let name: String
+public protocol LoadableAction {
+    associatedtype ReadyState
+    associatedtype ReadyAction
 
-        var isLoading: Bool = false
-        var result: Result<Ready.State, LoadError>? = nil
-    }
+    static func load(fresh: Bool) -> Self
+    static func didLoad(_ result: Result<ReadyState, LoadError>) -> Self
 
-    enum Action: Equatable, LoadableAction {
-        case load(fresh: Bool)
-        case didLoad(Result<Ready.State, LoadError>)
-        case ready(Ready.Action)
-    }
-
-    struct Ready: Reducer {
-        struct State: Equatable {
-            var greeting: String
-        }
-
-        enum Action: Hashable {
-            case noop
-        }
-
-        var body: some ReducerOf<Self> {
-            EmptyReducer()
-        }
-    }
-
-    var body: some ReducerOf<Self> {
-        EmptyReducer()
-    }
-
-    var load: LoadFor<OtherFeature> = { initialState in
-        try await Task.sleep(for: .seconds(2))
-        return OtherFeature.Ready.State(greeting: "Hello \(initialState.name)")
-    }
+    static func ready(_ ready: ReadyAction) -> Self
 }
+

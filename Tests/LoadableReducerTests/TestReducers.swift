@@ -94,7 +94,7 @@ struct MyView: View {
     let store: StoreOf<Nested>
 
     var body: some View {
-        LoadableStore(store: store) { rs in
+        LoadableStore(store) { rs in
             EmptyView()
         }
         errorView: { es in

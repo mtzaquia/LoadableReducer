@@ -16,20 +16,14 @@ extension LoadableMacro: ExtensionMacro {
     conformingTo protocols: [TypeSyntax],
     in context: C
   ) throws -> [ExtensionDeclSyntax] {
-    if let inheritanceClause = declaration.inheritanceClause,
-      inheritanceClause.inheritedTypes.contains(
-        where: {
-          ["Loadable"].withQualified.contains($0.type.trimmedDescription)
-        }
-      )
-    {
-      return []
-    }
-    let ext: DeclSyntax =
-      """
-      extension \(type.trimmed): LoadableReducer.Loadable {}
-      """
-    return [ext.cast(ExtensionDeclSyntax.self)]
+      if let inheritanceClause = declaration.inheritanceClause,
+         inheritanceClause.alreadyInherits(from: Identifiers.loadableType)
+      {
+          return []
+      }
+    
+      let ext = DeclSyntax("extension \(type.trimmed): \(raw: Identifiers.loadableType.qualifiedName) {}")
+      return [ext.cast(ExtensionDeclSyntax.self)]
   }
 }
 
@@ -151,11 +145,7 @@ extension LoadableMacro: MemberAttributeMacro {
   }
 }
 
-extension Array where Element == String {
-  var withQualified: Self {
-    self.flatMap { [$0, "ComposableArchitecture.\($0)"] }
-  }
-}
+
 
 struct MacroExpansionNoteMessage: NoteMessage {
   var message: String

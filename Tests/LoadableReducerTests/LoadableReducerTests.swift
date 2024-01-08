@@ -24,20 +24,6 @@ import XCTest
 import ComposableArchitecture
 @testable import LoadableReducer
 
-//public extension TestStore {
-//    convenience init<R: Reducer & Loadable, InitialState: Equatable, ReadyState: Equatable>(
-//      initialState: @autoclosure () -> InitialState,
-//      @ReducerBuilder<State, Action> reducer: () -> R,
-//      withDependencies prepareDependencies: ((inout DependencyValues) -> Void)? = nil
-//    ) where State == LoadableState<InitialState, ReadyState>, R.State == State, R.Action == Action {
-//        self.init(
-//            initialState: LoadableState(initial: initialState()),
-//            reducer: reducer,
-//            withDependencies: { dependencies in prepareDependencies?(&dependencies) }
-//        )
-//    }
-//}
-
 @MainActor
 final class LoadableReducerTests: XCTestCase {
 //    struct Client {

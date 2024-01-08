@@ -14,15 +14,12 @@ public enum LoadableActionMacro: ExtensionMacro, MemberMacro {
         in context: C
     ) throws -> [ExtensionDeclSyntax] {
         if let inheritanceClause = declaration.inheritanceClause,
-           inheritanceClause.inheritedTypes.contains(
-            where: {
-                ["LoadableAction"].withQualified.contains($0.type.trimmedDescription)
-            }
-           )
+           inheritanceClause.alreadyInherits(from: Identifiers.loadableActionType)
         {
             return []
         }
-        let ext: DeclSyntax = "extension \(type.trimmed): LoadableReducer.LoadableAction {}"
+
+        let ext = DeclSyntax("extension \(type.trimmed): \(raw: Identifiers.loadableActionType.qualifiedName) {}")
         return [ext.cast(ExtensionDeclSyntax.self)]
     }
 

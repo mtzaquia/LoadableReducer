@@ -24,21 +24,27 @@ import ComposableArchitecture
 import LoadableReducer
 import SwiftUI
 
-@Loadable
-struct MyFeature: Reducer, Loadable {
-    struct State: Equatable {
-        var url: URL
+@Reducer
+struct MyFeature: Loadable {
+    struct State: Equatable, LoadableState {
         var count = 1
+        
+        var isLoading: Bool = false
+        var result: Result<Ready.State, LoadError>? = nil
     }
 
-    enum Action {
+    enum Action: LoadableAction {
+        case load(fresh: Bool)
+        case didLoad(Result<Ready.State, LoadError>)
+        case ready(Ready.Action)
     }
 
-    struct Ready: Reducer {
+    @Reducer
+    struct Ready {
         struct State: Equatable, LoadingObserving {
             var isLoading: Bool = false
 
-            var count: Int
+            var doubledCount: Int
             @PresentationState var other: OtherFeature.State?
         }
 
@@ -56,6 +62,7 @@ struct MyFeature: Reducer, Loadable {
                 switch action {
                 case .presentOther:
                     state.other = .init(name: "MZ")
+                    
                     return .none
 
                 case .reload, .refresh, .other:
@@ -80,7 +87,7 @@ struct MyFeature: Reducer, Loadable {
                 return .send(.load(fresh: true))
 
             case .ready(.refresh):
-                state.count += 1
+                state.count *= 2
                 return .send(.load(fresh: false))
 
             default: return .none
@@ -95,6 +102,6 @@ struct MyFeature: Reducer, Loadable {
 //            throw URLError(.cancelled)
 //        }
 
-        return MyFeature.Ready.State(count: initialState.count)
+        return MyFeature.Ready.State(doubledCount: initialState.count * 2)
     }
 }

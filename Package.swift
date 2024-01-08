@@ -14,7 +14,7 @@ let package = Package(
         .library(
             name: "LoadableReducer",
             targets: ["LoadableReducer"]
-        )
+        ),
     ],
     dependencies: [
         .package(
@@ -22,6 +22,7 @@ let package = Package(
             exact: "1.5.1"
         ),
         .package(url: "https://github.com/apple/swift-syntax", from: "509.0.0"),
+        .package(url: "https://github.com/pointfreeco/swift-macro-testing", from: "0.2.0")
     ],
     targets: [
         .target(
@@ -42,11 +43,19 @@ let package = Package(
         ),
 
         .macro(
-              name: "LoadableReducerMacros",
-              dependencies: [
+            name: "LoadableReducerMacros",
+            dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
-              ]
-            ),
+            ]
+        ),
+        .testTarget(
+            name: "LoadableReducerMacrosTests",
+            dependencies: [
+                "LoadableReducerMacros",
+                .product(name: "MacroTesting", package: "swift-macro-testing"),
+            ]
+        ),
     ]
 )
+
